@@ -1,3 +1,80 @@
 {
-    "dataRoles": []
+    "dataRoles": [
+        {
+            "displayName": "Stage",
+            "name": "stage",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Status",
+            "name": "status",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Values",
+            "name": "values",
+            "kind": "Measure"
+        }
+    ],
+    "objects": {
+        "stage": {
+            "displayName": "Stage",
+            "displayNameKey": "stage",
+            "properties": {}
+        },
+        "status": {
+            "displayName": "Status",
+            "displayNameKey": "status",
+            "properties": {}
+        },
+        "values": {
+            "displayName": "Values",
+            "displayNameKey": "Values",
+            "properties": {}
+        }
+    },
+    "dataViewMappings": [
+        {
+            "conditions": [
+                {
+                    "stage": {
+                        "max": 1
+                    },
+                    "status": {
+                        "max": 1
+                    },
+                    "values": {
+                        "max": 1
+                    }
+                }
+            ],
+            "table": {
+                "rows": {
+                    "select": [
+                        {
+                            "for": {
+                                "in": "stage"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "status"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "values"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "sorting": {
+        "default": {}
+    },
+    "supportsLandingPage": true,
+    "supportsEmptyDataView": true,
+    "suppressDefaultTitle": true
 }
