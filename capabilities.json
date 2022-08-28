@@ -38,6 +38,7 @@
             "conditions": [
                 {
                     "stage": {
+                        "min": 1,
                         "max": 1
                     },
                     "status": {
@@ -48,8 +49,8 @@
                     }
                 }
             ],
-            "table": {
-                "rows": {
+            "categorical": {
+                "categories": {
                     "select": [
                         {
                             "for": {
@@ -57,16 +58,31 @@
                             }
                         },
                         {
-                            "for": {
-                                "in": "status"
-                            }
-                        },
-                        {
-                            "for": {
-                                "in": "values"
+                            "bind": {
+                                "to": "status"
                             }
                         }
-                    ]
+                    ],
+                    "dataReductionAlgorithm": {
+                        "top": {
+                            "count": 10000
+                        }
+                    }
+                },
+                "values": {
+                    "group": {
+                        "by": "Category",
+                        "select": [
+                            {
+                                "bind": {
+                                    "to": "values"
+                                }
+                            }
+                        ],
+                        "dataReductionAlgorithm": {
+                            "top": {}
+                        }
+                    }
                 }
             }
         }

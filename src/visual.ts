@@ -34,21 +34,33 @@ import IVisual = powerbi.extensibility.visual.IVisual;
 import EnumerateVisualObjectInstancesOptions = powerbi.EnumerateVisualObjectInstancesOptions;
 import VisualObjectInstance = powerbi.VisualObjectInstance;
 import DataView = powerbi.DataView;
+import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
 
-import { VisualSettings } from "./settings";
+import { FunnelChartSettings } from "./settings";
+import { IFunnelChartViewModel, IDataPoint } from "./model/ViewModel";
+import { visualTransform } from "./model/ViewModelHelper";
+
 export class FunnelChart implements IVisual {
-  private settings: VisualSettings;
+  private settings: FunnelChartSettings;
+  private host: IVisualHost;
+  private model: IFunnelChartViewModel;
 
-  constructor(options: VisualConstructorOptions) {}
+  constructor(options: VisualConstructorOptions) {
+    this.host = options.host;
+  }
 
-  public update(options: VisualUpdateOptions) {}
+  public update(options: VisualUpdateOptions) {
+    this.model = visualTransform(options, this.host);
+    console.log(this.model);
+    
+  }
 
   public enumerateObjectInstances(
     options: EnumerateVisualObjectInstancesOptions
   ): VisualObjectInstance[] | VisualObjectInstanceEnumerationObject {
-    return VisualSettings.enumerateObjectInstances(
-      this.settings || VisualSettings.getDefault(),
+    return FunnelChartSettings.enumerateObjectInstances(
+      this.settings || FunnelChartSettings.getDefault(),
       options
     );
   }

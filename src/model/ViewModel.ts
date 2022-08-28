@@ -1,5 +1,5 @@
 /*
- *  Power BI Visualizations
+ *  Power BI Visual CLI
  *
  *  Copyright (c) Microsoft Corporation
  *  All rights reserved.
@@ -23,10 +23,33 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
-
 "use strict";
 
-import { dataViewObjectsParser } from "powerbi-visuals-utils-dataviewutils";
-import DataViewObjectsParser = dataViewObjectsParser.DataViewObjectsParser;
+import { FunnelChartSettings } from "../settings";
+import powerbi from "powerbi-visuals-api";
+import ISelectionId = powerbi.visuals.ISelectionId;
+import PrimitiveValue = powerbi.PrimitiveValue;
 
-export class FunnelChartSettings extends DataViewObjectsParser {}
+export interface IDataPoint {
+  id: number;
+  stageName: PrimitiveValue;
+  statusPoints: IStatusPoint[];
+  sumStatus: PrimitiveValue;
+  selectionId: ISelectionId;
+  tooltipValues: ITooltipValue[];
+}
+
+export interface IStatusPoint {
+  statusName: PrimitiveValue;
+  value: PrimitiveValue;
+}
+
+export interface ITooltipValue {
+  displayName: string;
+  dataLabel: string;
+}
+
+export interface IFunnelChartViewModel {
+  settings: FunnelChartSettings;
+  dataPoints: IDataPoint[];
+}
