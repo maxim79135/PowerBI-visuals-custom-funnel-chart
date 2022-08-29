@@ -33,10 +33,12 @@ import PrimitiveValue = powerbi.PrimitiveValue;
 export interface IDataPoint {
   id: number;
   stageName: PrimitiveValue;
+  formattedStageName: PrimitiveValue;
   statusPoints: IStatusPoint[];
   sumStatus: PrimitiveValue;
   selectionId: ISelectionId;
   tooltipValues: ITooltipValue[];
+  x2: number;
 }
 
 export interface IStatusPoint {
@@ -52,4 +54,5 @@ export interface ITooltipValue {
 export interface IFunnelChartViewModel {
   settings: FunnelChartSettings;
   dataPoints: IDataPoint[];
+  maxStageName: PrimitiveValue;
 }

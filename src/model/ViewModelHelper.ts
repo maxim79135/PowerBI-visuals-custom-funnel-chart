@@ -65,49 +65,73 @@ export function visualTransform(
     return {
       settings: settings,
       dataPoints: dataPoints,
+      maxStageName: "",
     };
 
   let dataCategorical = dataViews[0].categorical;
   let stageCategory = dataCategorical.categories.find(
     (v) => v.source.roles["stage"]
+  );
+  let stageCategoryValues = dataCategorical.categories.find(
+    (v) => v.source.roles["stage"]
   ).values;
-  let statusCategory = dataCategorical.categories.find(
+  let statusCategoryValues = dataCategorical.categories.find(
     (v) => v.source.roles["status"]
   ).values;
   let values = dataCategorical.values.find(
     (v) => v.source.roles["values"]
   ).values;
 
+  // push values in dataPoints
   let id = 0;
-  stageCategory.forEach((stage, index) => {
+  stageCategoryValues.forEach((stage, index) => {
     if (!dataPoints.find((v) => v.stageName == stage)) {
       dataPoints.push({
         id: id,
         stageName: stage,
+        formattedStageName: stage,
         statusPoints: [
           {
-            statusName: statusCategory[index],
+            statusName: statusCategoryValues[index],
             value: values[index],
           },
         ],
-        sumStatus: values[index],
-        selectionId: null,
-        tooltipValues: null,
+        sumStatus: 0,
+        selectionId: host
+          .createSelectionIdBuilder()
+          .withCategory(stageCategory, index)
+          .createSelectionId(),
+        tooltipValues: undefined,
+        x2: undefined,
       });
       id++;
     } else {
       dataPoints
         .find((v) => v.stageName == stage)
         .statusPoints.push({
-          statusName: statusCategory[index],
+          statusName: statusCategoryValues[index],
           value: values[index],
         });
     }
   });
 
+  // calc sumStatus for each stage
+  dataPoints.forEach(
+    (v) =>
+      (v.sumStatus = v.statusPoints
+        .map((status) => status.value)
+        .reduce((acc, v) => Number(acc) + Number(v)))
+  );
+
+  // calc longest stage name
+  let maxStageName = dataPoints
+    .map((d) => d.stageName)
+    .reduce((a, b) => (String(a).length > String(b).length ? a : b));
+
   viewModel = {
     dataPoints: dataPoints,
     settings: settings,
+    maxStageName: maxStageName,
   };
 
   return viewModel;

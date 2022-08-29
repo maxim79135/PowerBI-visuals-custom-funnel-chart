@@ -29,4 +29,16 @@
 import { dataViewObjectsParser } from "powerbi-visuals-utils-dataviewutils";
 import DataViewObjectsParser = dataViewObjectsParser.DataViewObjectsParser;
 
-export class FunnelChartSettings extends DataViewObjectsParser {}
+export class StageLabel {
+  public textSize: number = 10;
+  public fontFamily: string =
+    "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif";
+  public color: string = "#333333";
+  public isItalic: boolean = false;
+  public isBold: boolean = false;
+  public maxWidth: number = 30;
+}
+
+export class FunnelChartSettings extends DataViewObjectsParser {
+  public stageLabel: StageLabel = new StageLabel();
+}

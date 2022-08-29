@@ -28,6 +28,11 @@
 import "core-js/stable";
 import "./../style/funnel.less";
 import powerbi from "powerbi-visuals-api";
+
+import { ScaleBand, scaleBand, ScaleLinear, scaleLinear } from "d3-scale";
+import { BaseType, select, Selection } from "d3-selection";
+const getEvent = () => require("d3-selection").event;
+
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import IVisual = powerbi.extensibility.visual.IVisual;
@@ -36,32 +41,214 @@ import VisualObjectInstance = powerbi.VisualObjectInstance;
 import DataView = powerbi.DataView;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
+import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
+import TextProperties = interfaces.TextProperties;
+
+import {
+  textMeasurementService,
+  interfaces,
+} from "powerbi-visuals-utils-formattingutils";
 
 import { FunnelChartSettings } from "./settings";
 import { IFunnelChartViewModel, IDataPoint } from "./model/ViewModel";
 import { visualTransform } from "./model/ViewModelHelper";
 
 export class FunnelChart implements IVisual {
+  // TODO Replace to settings
+  private static Config = {
+    barPadding: 0.1,
+    outerPadding: 0.05,
+    xScalePadding: 0,
+  };
+
   private settings: FunnelChartSettings;
   private host: IVisualHost;
   private model: IFunnelChartViewModel;
 
+  private width: number;
+  private height: number;
+  private stageScale: ScaleBand<string>;
+
+  private svg: Selection<SVGElement, {}, HTMLElement, any>;
+  private emptyRectContainer: Selection<SVGElement, {}, HTMLElement, any>;
+  private divContainer: Selection<SVGElement, {}, HTMLElement, any>;
+  private funnelContainer: Selection<SVGElement, {}, HTMLElement, any>;
+
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
+
+    let svg = (this.svg = select(options.element)
+      .append<SVGElement>("div")
+      .classed("divContainer", true)
+      .append<SVGElement>("svg")
+      .classed("funnelChart", true));
+
+    this.funnelContainer = svg
+      .append<SVGElement>("g")
+      .classed("funnelContainer", true);
+
+    this.emptyRectContainer = this.funnelContainer
+      .append<SVGElement>("rect")
+      .classed("rect-container", true);
+    this.emptyRectContainer.attr("fill", "transparent");
+
+    this.divContainer = select(".divContainer");
   }
 
   public update(options: VisualUpdateOptions) {
     this.model = visualTransform(options, this.host);
     console.log(this.model);
-    
+
+    this.width = options.viewport.width;
+    this.height = options.viewport.height;
+
+    this.updateViewport(options);
+    this.drawFunnelChart();
+  }
+
+  public updateViewport(options: VisualUpdateOptions) {
+    let h = options.viewport.height + 5;
+    let w = options.viewport.width;
+
+    // update size canvas
+    this.divContainer.attr(
+      "style",
+      "width:" + w + "px;height:" + h + "px;overflow-y:auto;overflow-x:hidden;"
+    );
+
+    this.stageScale = scaleBand()
+      .domain(this.model.dataPoints.map((d) => <string>d.stageName))
+      .rangeRound([5, this.height])
+      .padding(FunnelChart.Config.barPadding)
+      .paddingOuter(FunnelChart.Config.outerPadding);
+
+    // update sizes
+    this.svg.attr("width", this.width);
+    this.svg.attr("height", this.height);
+    this.emptyRectContainer.attr("width", this.width);
+    this.emptyRectContainer.attr("height", this.height);
+  }
+
+  private drawFunnelChart() {
+    let stages = this.funnelContainer
+      .selectAll("g.stage-container")
+      .data(this.model.dataPoints);
+    stages
+      .enter()
+      .append<SVGElement>("g")
+      .classed("stage-container", true)
+      .attr("x", FunnelChart.Config.xScalePadding) // .merge(bars)
+      .attr("y", (d) => this.stageScale(<string>d.stageName))
+      .attr("height", this.stageScale.bandwidth())
+      .attr("width", (d) => this.width);
+    stages.exit().remove();
+
+    this.drawStageLabels();
+  }
+
+  private drawStageLabels() {
+    let settings = this.model.settings.stageLabel;
+    let stages = this.funnelContainer
+      .selectAll("g.stage-container")
+      .data(this.model.dataPoints);
+
+    let labels = stages.selectAll("text.stage-label").data((d) => [d]);
+    let mergeElement = labels
+      .enter()
+      .append<SVGElement>("text")
+      .classed("stage-label", true);
+    labels
+      .merge(mergeElement)
+      .each((d) => {
+        let textProperties: TextProperties = {
+          fontFamily: settings.fontFamily,
+          fontSize: settings.textSize + "pt",
+          text: <string>d.stageName,
+        };
+        let maxTextProperties: TextProperties = {
+          fontFamily: settings.fontFamily,
+          fontSize: settings.textSize + "pt",
+          text: <string>this.model.maxStageName,
+        };
+        let width = Math.min(
+          textMeasurementService.measureSvgTextWidth(maxTextProperties),
+          (this.width * settings.maxWidth) / 100
+        );
+        d.x2 = width;
+        d.formattedStageName = textMeasurementService.getTailoredTextOrDefault(
+          textProperties,
+          Math.round(width)
+        );
+      })
+      .attr("x", (d) => {
+        let textProperties: TextProperties = {
+          fontFamily: settings.fontFamily,
+          fontSize: settings.textSize + "pt",
+          text: <string>d.formattedStageName,
+        };
+        return (
+          d.x2 - textMeasurementService.measureSvgTextWidth(textProperties)
+        );
+      })
+      .attr(
+        "y",
+        (d) =>
+          this.stageScale(<string>d.stageName) + this.stageScale.bandwidth() / 2
+      )
+      .attr("heigh", this.stageScale.bandwidth())
+      .style("font-size", settings.textSize + "pt")
+      .style("font-family", settings.fontFamily)
+      .style("font-weight", settings.isBold ? "bold" : "")
+      .style("font-style", settings.isItalic ? "italic" : "")
+      .style("fill", settings.color)
+      .text((d) => <string>d.formattedStageName);
+
+    labels.exit().remove();
   }
 
   public enumerateObjectInstances(
     options: EnumerateVisualObjectInstancesOptions
   ): VisualObjectInstance[] | VisualObjectInstanceEnumerationObject {
-    return FunnelChartSettings.enumerateObjectInstances(
-      this.settings || FunnelChartSettings.getDefault(),
+    const instances = FunnelChartSettings.enumerateObjectInstances(
+      this.model.settings,
       options
     );
+    const objectName = options.objectName;
+
+    switch (objectName) {
+      case "stageLabel":
+        this.addAnInstanceToEnumeration(instances, {
+          objectName,
+          properties: {
+            maxWidth: this.model.settings.stageLabel.maxWidth,
+          },
+          selector: null,
+          validValues: {
+            maxWidth: {
+              numberRange: {
+                min: 15,
+                max: 50,
+              },
+            },
+          },
+        });
+        break;
+    }
+    return instances;
+  }
+
+  private addAnInstanceToEnumeration(
+    instanceEnumeration: VisualObjectInstanceEnumeration,
+    instance: VisualObjectInstance
+  ): void {
+    if (
+      (<VisualObjectInstanceEnumerationObject>instanceEnumeration).instances
+    ) {
+      (<VisualObjectInstanceEnumerationObject>(
+        instanceEnumeration
+      )).instances.push(instance);
+    } else {
+      (<VisualObjectInstance[]>instanceEnumeration).push(instance);
+    }
   }
 }
