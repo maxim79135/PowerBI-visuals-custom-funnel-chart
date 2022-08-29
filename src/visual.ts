@@ -29,6 +29,7 @@ import "core-js/stable";
 import "./../style/funnel.less";
 import powerbi from "powerbi-visuals-api";
 
+import * as d3 from "d3";
 import { ScaleBand, scaleBand, ScaleLinear, scaleLinear } from "d3-scale";
 import { BaseType, select, Selection } from "d3-selection";
 const getEvent = () => require("d3-selection").event;
@@ -50,7 +51,11 @@ import {
 } from "powerbi-visuals-utils-formattingutils";
 
 import { FunnelChartSettings } from "./settings";
-import { IFunnelChartViewModel, IDataPoint } from "./model/ViewModel";
+import {
+  IFunnelChartViewModel,
+  IDataPoint,
+  IStatusPoint,
+} from "./model/ViewModel";
 import { visualTransform } from "./model/ViewModelHelper";
 
 export class FunnelChart implements IVisual {
@@ -59,6 +64,7 @@ export class FunnelChart implements IVisual {
     barPadding: 0.1,
     outerPadding: 0.05,
     xScalePadding: 0,
+    degree: 25,
   };
 
   private settings: FunnelChartSettings;
@@ -137,6 +143,7 @@ export class FunnelChart implements IVisual {
       .enter()
       .append<SVGElement>("g")
       .classed("stage-container", true)
+      .attr("id", (d) => `stage-container-${d.id}`)
       .attr("x", FunnelChart.Config.xScalePadding) // .merge(bars)
       .attr("y", (d) => this.stageScale(<string>d.stageName))
       .attr("height", this.stageScale.bandwidth())
@@ -144,6 +151,7 @@ export class FunnelChart implements IVisual {
     stages.exit().remove();
 
     this.drawStageLabels();
+    this.drawFunnel();
   }
 
   private drawStageLabels() {
@@ -204,6 +212,60 @@ export class FunnelChart implements IVisual {
       .text((d) => <string>d.formattedStageName);
 
     labels.exit().remove();
+  }
+
+  private drawFunnel() {
+    let data = this.model.dataPoints;
+    let stages = this.funnelContainer
+      .selectAll("g.stage-container")
+      .data(this.model.dataPoints);
+    let statusContainer = stages
+      .selectAll("g.status-container")
+      .data((d) => [d]);
+    let mergeElement = statusContainer
+      .enter()
+      .append<SVGElement>("g")
+      .classed("status-container", true);
+    statusContainer
+      .merge(mergeElement)
+      .attr("id", (d) => `status-container-${d.id}`);
+
+    data.forEach((stage, index) => {
+      let statusContainer = this.funnelContainer.select(
+        `#status-container-${index}`
+      );
+
+      let statusScale = scaleLinear()
+        .domain([0, <number>stage.sumStatus])
+        .range([
+          0,
+          this.width -
+            stage.x2 -
+            2 *
+              Math.tan((FunnelChart.Config.degree * Math.PI) / 180) *
+              this.stageScale(<string>stage.stageName),
+        ]);
+
+      let statusBar = statusContainer
+        .selectAll("rect.status-bar")
+        .data(stage.statusPoints);
+      let mergeStatus = statusBar
+        .enter()
+        .append("rect")
+        .classed("status-bar", true);
+      let width = statusScale(<number>stage.sumStatus)
+      statusBar
+        .merge(mergeStatus)
+        .attr("x", stage.x2 + (this.width - stage.x2) / 2 - width / 2)
+        .attr("y", this.stageScale(<string>stage.stageName))
+        .attr("width", width)
+        .attr("height", this.stageScale.bandwidth())
+        .style("fill", "#0B3E9A");
+
+      statusBar.exit().remove();
+    });
+
+    statusContainer.exit().remove();
   }
 
   public enumerateObjectInstances(
