@@ -64,7 +64,8 @@ export class FunnelChart implements IVisual {
     barPadding: 0.1,
     outerPadding: 0.05,
     xScalePadding: 0,
-    degree: 25,
+    degree: 40,
+    statusBarPadding: 10,
   };
 
   private settings: FunnelChartSettings;
@@ -243,7 +244,8 @@ export class FunnelChart implements IVisual {
             stage.x2 -
             2 *
               Math.tan((FunnelChart.Config.degree * Math.PI) / 180) *
-              this.stageScale(<string>stage.stageName),
+              this.stageScale(<string>stage.stageName) -
+            2 * FunnelChart.Config.statusBarPadding,
         ]);
 
       let statusBar = statusContainer
@@ -253,10 +255,10 @@ export class FunnelChart implements IVisual {
         .enter()
         .append("rect")
         .classed("status-bar", true);
-      let width = statusScale(<number>stage.sumStatus)
+      let width = statusScale(<number>stage.sumStatus);
       statusBar
         .merge(mergeStatus)
-        .attr("x", stage.x2 + (this.width - stage.x2) / 2 - width / 2)
+        .attr("x", (this.width + stage.x2) / 2 - width / 2)
         .attr("y", this.stageScale(<string>stage.stageName))
         .attr("width", width)
         .attr("height", this.stageScale.bandwidth())
