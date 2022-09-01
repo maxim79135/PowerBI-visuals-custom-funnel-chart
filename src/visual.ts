@@ -236,18 +236,6 @@ export class FunnelChart implements IVisual {
         `#status-container-${index}`
       );
 
-      let statusScale = scaleLinear()
-        .domain([0, <number>stage.sumStatus])
-        .range([
-          0,
-          this.width -
-            stage.x2 -
-            2 *
-              Math.tan((FunnelChart.Config.degree * Math.PI) / 180) *
-              this.stageScale(<string>stage.stageName) -
-            2 * FunnelChart.Config.statusBarPadding,
-        ]);
-
       let statusBar = statusContainer
         .selectAll("rect.status-bar")
         .data(stage.statusPoints);
@@ -255,11 +243,18 @@ export class FunnelChart implements IVisual {
         .enter()
         .append("rect")
         .classed("status-bar", true);
-      let width = statusScale(<number>stage.sumStatus);
+      const statusBarTopY = this.stageScale(<string>stage.stageName);
+      let width =
+        this.width -
+        stage.x2 -
+        2 *
+          Math.tan((FunnelChart.Config.degree * Math.PI) / 180) *
+          statusBarTopY -
+        2 * FunnelChart.Config.statusBarPadding;
       statusBar
         .merge(mergeStatus)
         .attr("x", (this.width + stage.x2) / 2 - width / 2)
-        .attr("y", this.stageScale(<string>stage.stageName))
+        .attr("y", statusBarTopY)
         .attr("width", width)
         .attr("height", this.stageScale.bandwidth())
         .style("fill", "#0B3E9A");
