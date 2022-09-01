@@ -57,6 +57,7 @@ import {
   IStatusPoint,
 } from "./model/ViewModel";
 import { visualTransform } from "./model/ViewModelHelper";
+import { ColorHelper } from "powerbi-visuals-utils-colorutils";
 
 export class FunnelChart implements IVisual {
   // TODO Replace to settings
@@ -290,6 +291,26 @@ export class FunnelChart implements IVisual {
               },
             },
           },
+        });
+        break;
+
+      case "dataColors":
+        if (!this.model.settings.dataColors.showAll) break;
+        
+        this.model.dataPoints.forEach((dataPoint) => {
+          dataPoint.statusPoints.forEach((statusPoint) => {
+            this.addAnInstanceToEnumeration(instances, {
+              displayName: <string>statusPoint.statusName,
+              objectName: objectName,
+              properties: {
+                color: statusPoint.color,
+              },
+              selector: ColorHelper.normalizeSelector(
+                statusPoint.selectionId.getSelector(),
+                false
+              ),
+            });
+          });
         });
         break;
     }

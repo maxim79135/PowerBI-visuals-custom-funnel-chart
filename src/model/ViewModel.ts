@@ -44,6 +44,8 @@ export interface IDataPoint {
 export interface IStatusPoint {
   statusName: PrimitiveValue;
   value: PrimitiveValue;
+  color: string;
+  selectionId: ISelectionId;
 }
 
 export interface ITooltipValue {

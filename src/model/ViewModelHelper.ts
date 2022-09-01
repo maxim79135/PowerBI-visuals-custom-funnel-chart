@@ -72,12 +72,11 @@ export function visualTransform(
   let stageCategory = dataCategorical.categories.find(
     (v) => v.source.roles["stage"]
   );
-  let stageCategoryValues = dataCategorical.categories.find(
-    (v) => v.source.roles["stage"]
-  ).values;
-  let statusCategoryValues = dataCategorical.categories.find(
+  let stageCategoryValues = stageCategory.values;
+  let statusCategory = dataCategorical.categories.find(
     (v) => v.source.roles["status"]
-  ).values;
+  );
+  let statusCategoryValues = statusCategory.values;
   let values = dataCategorical.values.find(
     (v) => v.source.roles["values"]
   ).values;
@@ -85,6 +84,24 @@ export function visualTransform(
   // push values in dataPoints
   let id = 0;
   stageCategoryValues.forEach((stage, index) => {
+    const statusSelectionId = host
+      .createSelectionIdBuilder()
+      .withCategory(statusCategory, index)
+      .createSelectionId();
+    let color: string;
+
+    if (
+      statusCategory &&
+      statusCategory.objects &&
+      statusCategory.objects[index]
+    ) {
+      color = getValue(statusCategory.objects[index], "dataColors", "color", {
+        solid: { color: "#333333" },
+      }).solid.color;
+    } else {
+      color = settings.dataColors.color;
+    }
+
     if (!dataPoints.find((v) => v.stageName == stage)) {
       dataPoints.push({
         id: id,
@@ -94,6 +111,8 @@ export function visualTransform(
           {
             statusName: statusCategoryValues[index],
             value: values[index],
+            selectionId: statusSelectionId,
+            color: color,
           },
         ],
         sumStatus: 0,
@@ -111,6 +130,8 @@ export function visualTransform(
         .statusPoints.push({
           statusName: statusCategoryValues[index],
           value: values[index],
+          selectionId: statusSelectionId,
+          color: color,
         });
     }
   });

@@ -39,6 +39,12 @@ export class StageLabel {
   public maxWidth: number = 30;
 }
 
+export class DataColors {
+  public color: string = "#01b8aa";
+  public showAll: boolean = false;
+}
+
 export class FunnelChartSettings extends DataViewObjectsParser {
   public stageLabel: StageLabel = new StageLabel();
+  public dataColors: DataColors = new DataColors();
 }
