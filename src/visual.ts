@@ -66,7 +66,7 @@ export class FunnelChart implements IVisual {
     outerPadding: 0.05,
     xScalePadding: 0,
     degree: 40,
-    statusBarPadding: 10,
+    statusBarMargin: 10,
   };
 
   private settings: FunnelChartSettings;
@@ -233,8 +233,18 @@ export class FunnelChart implements IVisual {
       .attr("id", (d) => `status-container-${d.id}`);
 
     data.forEach((stage, index) => {
+      const statusBarY = this.stageScale(<string>stage.stageName);
+      const offsetX =
+        Math.tan((FunnelChart.Config.degree * Math.PI) / 180) * statusBarY +
+        FunnelChart.Config.statusBarMargin;
+      let maxWidth = this.width - stage.x2 - 2 * offsetX;
+
       let statusContainer = this.funnelContainer.select(
         `#status-container-${index}`
+      );
+      statusContainer.attr(
+        "transform",
+        `translate(${stage.x2 + offsetX}, ${statusBarY})`
       );
 
       let statusBar = statusContainer
@@ -244,21 +254,27 @@ export class FunnelChart implements IVisual {
         .enter()
         .append("rect")
         .classed("status-bar", true);
-      const statusBarTopY = this.stageScale(<string>stage.stageName);
-      let width =
-        this.width -
-        stage.x2 -
-        2 *
-          Math.tan((FunnelChart.Config.degree * Math.PI) / 180) *
-          statusBarTopY -
-        2 * FunnelChart.Config.statusBarPadding;
+      let statusScale = d3
+        .scaleLinear()
+        .domain([0, <number>stage.sumStatus])
+        .range([0, maxWidth]);
       statusBar
         .merge(mergeStatus)
-        .attr("x", (this.width + stage.x2) / 2 - width / 2)
-        .attr("y", statusBarTopY)
-        .attr("width", width)
+        .attr("x", (d, i) => {
+          if (i == 0) return 0;
+
+          return Math.round(
+            statusScale(
+              <number>stage.statusPoints
+                .map((v) => v.value)
+                .filter((v, j) => j < i)
+                .reduce((acc, v) => Number(acc) + Number(v))
+            )
+          );
+        })
+        .attr("width", (d) => Math.round(statusScale(<number>d.value)))
         .attr("height", this.stageScale.bandwidth())
-        .style("fill", "#0B3E9A");
+        .style("fill", (d) => d.color);
 
       statusBar.exit().remove();
     });
@@ -296,7 +312,7 @@ export class FunnelChart implements IVisual {
 
       case "dataColors":
         if (!this.model.settings.dataColors.showAll) break;
-        
+
         this.model.dataPoints.forEach((dataPoint) => {
           dataPoint.statusPoints.forEach((statusPoint) => {
             this.addAnInstanceToEnumeration(instances, {
