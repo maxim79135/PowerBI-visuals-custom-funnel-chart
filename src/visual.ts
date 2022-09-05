@@ -46,6 +46,8 @@ import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnume
 import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
 import TextProperties = interfaces.TextProperties;
 import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
+import ISelectionManager = powerbi.extensibility.ISelectionManager;
+import ISelectionId = powerbi.visuals.ISelectionId;
 
 import {
   textMeasurementService,
@@ -76,10 +78,10 @@ export class FunnelChart implements IVisual {
     statusBarMargin: 10,
   };
 
-  private settings: FunnelChartSettings;
   private host: IVisualHost;
   private model: IFunnelChartViewModel;
   private tooltipServiceWrapper: ITooltipServiceWrapper;
+  private selectionManager: ISelectionManager;
 
   private width: number;
   private height: number;
@@ -96,6 +98,7 @@ export class FunnelChart implements IVisual {
       options.host.tooltipService,
       options.element
     );
+    this.selectionManager = options.host.createSelectionManager();
 
     let svg = (this.svg = select(options.element)
       .append<SVGElement>("div")
@@ -129,6 +132,7 @@ export class FunnelChart implements IVisual {
       (tooltipEvent: IStatusPoint) => this.getTooltipData(tooltipEvent),
       (tooltipEvent: IStatusPoint) => tooltipEvent.selectionId
     );
+    this.synSelections();
   }
 
   public updateViewport(options: VisualUpdateOptions) {
@@ -593,5 +597,88 @@ export class FunnelChart implements IVisual {
     });
 
     return tooltip;
+  }
+
+  public synSelections() {
+    let area = select("rect.rect-container");
+    let bars = this.funnelContainer.selectAll("rect.status-bar");
+    let stages = this.funnelContainer.selectAll("text.stage-label");
+
+    area.on("click", () => {
+      if (this.selectionManager.hasSelection()) {
+        this.selectionManager.clear().then(() => {
+          this.syncSelectionState(bars, []);
+          this.syncSelectionState(stages, []);
+        });
+      }
+
+      bars.attr("fill-opacity", 1);
+      stages.attr("fill-opacity", 1);
+    });
+
+    bars.on("click", (d: IStatusPoint) => {
+      const mouseEvent: MouseEvent = getEvent();
+      const isCtrlPressed: boolean = mouseEvent.ctrlKey;
+
+      this.selectionManager
+        .select(d.selectionId, isCtrlPressed)
+        .then((ids: ISelectionId[]) => {
+          this.syncSelectionState(bars, ids, 1);
+          if (!isCtrlPressed) this.syncSelectionState(stages, []);
+        });
+    });
+
+    stages.on("click", (d: IDataPoint) => {
+      const mouseEvent: MouseEvent = getEvent();
+      const isCtrlPressed: boolean = mouseEvent.ctrlKey;
+      this.selectionManager
+        .select(
+          d.statusPoints.map((v) => v.selectionId),
+          isCtrlPressed
+        )
+        .then((ids: ISelectionId[]) => {
+          this.syncSelectionState(stages, ids, 1);
+          if (!isCtrlPressed) this.syncSelectionState(bars, []);
+        });
+    });
+  }
+
+  private syncSelectionState(
+    selection: Selection<BaseType, any, BaseType, any>,
+    selectionIds: ISelectionId[],
+    opacity: number = null
+  ): void {
+    if (!selection || !selectionIds) {
+      return;
+    }
+
+    if (!selectionIds.length) {
+      selection.style("fill-opacity", null);
+      return;
+    }
+
+    selection.each((dataPoint, i, nodes) => {
+      const isSelected: boolean = this.isSelectionIdInArray(
+        selectionIds,
+        dataPoint.selectionId
+      );
+      select(nodes[i]).style(
+        "fill-opacity",
+        isSelected ? opacity : opacity / 2
+      );
+    });
+  }
+
+  private isSelectionIdInArray(
+    selectionIds: ISelectionId[],
+    selectionId: ISelectionId
+  ): boolean {
+    if (!selectionIds || !selectionId) {
+      return false;
+    }
+
+    return selectionIds.some((currentSelectionId: ISelectionId) => {
+      return currentSelectionId.includes(selectionId);
+    });
   }
 }
