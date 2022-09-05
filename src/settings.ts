@@ -37,6 +37,7 @@ export class StageLabel {
   public isItalic: boolean = false;
   public isBold: boolean = false;
   public maxWidth: number = 30;
+  public margin: number = 0;
 }
 
 export class ValueLabel {
@@ -49,6 +50,7 @@ export class ValueLabel {
   public maxWidth: number = 30;
   public displayUnit: number = 0;
   public decimalPlaces: number = 0;
+  public margin: number = 0;
 }
 
 export class Status {

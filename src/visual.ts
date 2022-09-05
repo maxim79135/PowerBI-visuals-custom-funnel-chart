@@ -191,11 +191,11 @@ export class FunnelChart implements IVisual {
       textMeasurementService.measureSvgTextWidth(maxTextProperties),
       (this.width * settings.maxWidth) / 100
     );
-    this.model.statusBarX1 = width;
+    this.model.statusBarX1 = width + settings.margin;
     if (inverted) {
       [this.model.statusBarX1, this.model.statusBarX2] = [
-        width,
-        this.width - width,
+        width + settings.margin,
+        this.width - width - settings.margin,
       ];
     }
 
@@ -274,10 +274,10 @@ export class FunnelChart implements IVisual {
       (this.width * settings.maxWidth) / 100
     );
 
-    this.model.statusBarX2 = this.width - width;
+    this.model.statusBarX2 = this.width - width - settings.margin;
     if (inverted) {
       [this.model.statusBarX1, this.model.statusBarX2] = [
-        width,
+        width + settings.margin,
         this.width - this.model.statusBarX1,
       ];
     }
@@ -454,6 +454,7 @@ export class FunnelChart implements IVisual {
           objectName,
           properties: {
             maxWidth: this.model.settings.stageLabel.maxWidth,
+            margin: this.model.settings.stageLabel.margin,
           },
           selector: null,
           validValues: {
@@ -461,6 +462,12 @@ export class FunnelChart implements IVisual {
               numberRange: {
                 min: 15,
                 max: 30,
+              },
+            },
+            margin: {
+              numberRange: {
+                min: 0,
+                max: 25,
               },
             },
           },
@@ -473,6 +480,7 @@ export class FunnelChart implements IVisual {
           properties: {
             maxWidth: this.model.settings.valueLabel.maxWidth,
             decimalPlaces: this.model.settings.valueLabel.decimalPlaces,
+            margin: this.model.settings.valueLabel.margin,
           },
           selector: null,
           validValues: {
@@ -486,6 +494,12 @@ export class FunnelChart implements IVisual {
               numberRange: {
                 min: 0,
                 max: 9,
+              },
+            },
+            margin: {
+              numberRange: {
+                min: 0,
+                max: 25,
               },
             },
           },
