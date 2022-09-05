@@ -160,6 +160,7 @@ export function visualTransform(
         statusPoints: [
           {
             statusName: statusCategoryValues[index],
+            formattedStatusName: statusCategoryValues[index],
             value: values[index],
             selectionId: statusSelectionId,
             color: color,
@@ -179,6 +180,7 @@ export function visualTransform(
         .find((v) => v.stageName == stage)
         .statusPoints.push({
           statusName: statusCategoryValues[index],
+          formattedStatusName: statusCategoryValues[index],
           value: values[index],
           selectionId: statusSelectionId,
           color: color,

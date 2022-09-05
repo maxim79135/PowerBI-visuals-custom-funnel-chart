@@ -42,6 +42,7 @@ export interface IDataPoint {
 
 export interface IStatusPoint {
   statusName: PrimitiveValue;
+  formattedStatusName: PrimitiveValue;
   value: PrimitiveValue;
   tooltipValues: ITooltipValue[];
   color: string;
