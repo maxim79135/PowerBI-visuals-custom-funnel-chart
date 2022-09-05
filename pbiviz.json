@@ -4,7 +4,7 @@
         "displayName": "Funnel Chart",
         "guid": "funnelChart",
         "visualClassName": "FunnelChart",
-        "version": "1.0.1",
+        "version": "1.0.2",
         "description": "Custom funnel chart",
         "supportUrl": "dev",
         "gitHubUrl": "https://github.com/maxim79135/PowerBI-visuals-custom-funnel-chart"
