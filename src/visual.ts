@@ -27,6 +27,7 @@
 
 import "core-js/stable";
 import "./../style/funnel.less";
+import "regenerator-runtime/runtime";
 import powerbi from "powerbi-visuals-api";
 
 import * as d3 from "d3";
@@ -44,6 +45,7 @@ import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
 import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
 import TextProperties = interfaces.TextProperties;
+import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
 import {
   textMeasurementService,
@@ -58,6 +60,11 @@ import {
 } from "./model/ViewModel";
 import { visualTransform } from "./model/ViewModelHelper";
 import { ColorHelper } from "powerbi-visuals-utils-colorutils";
+import {
+  createTooltipServiceWrapper,
+  ITooltipServiceWrapper,
+  TooltipEventArgs as ITooltipEventArgs,
+} from "powerbi-visuals-utils-tooltiputils";
 
 export class FunnelChart implements IVisual {
   // TODO Replace to settings
@@ -72,6 +79,7 @@ export class FunnelChart implements IVisual {
   private settings: FunnelChartSettings;
   private host: IVisualHost;
   private model: IFunnelChartViewModel;
+  private tooltipServiceWrapper: ITooltipServiceWrapper;
 
   private width: number;
   private height: number;
@@ -84,6 +92,10 @@ export class FunnelChart implements IVisual {
 
   constructor(options: VisualConstructorOptions) {
     this.host = options.host;
+    this.tooltipServiceWrapper = createTooltipServiceWrapper(
+      options.host.tooltipService,
+      options.element
+    );
 
     let svg = (this.svg = select(options.element)
       .append<SVGElement>("div")
@@ -112,6 +124,11 @@ export class FunnelChart implements IVisual {
 
     this.updateViewport(options);
     this.drawFunnelChart();
+    this.tooltipServiceWrapper.addTooltip(
+      this.funnelContainer.selectAll("rect.status-bar"),
+      (tooltipEvent: IStatusPoint) => this.getTooltipData(tooltipEvent),
+      (tooltipEvent: IStatusPoint) => tooltipEvent.selectionId
+    );
   }
 
   public updateViewport(options: VisualUpdateOptions) {
@@ -431,5 +448,19 @@ export class FunnelChart implements IVisual {
     } else {
       (<VisualObjectInstance[]>instanceEnumeration).push(instance);
     }
+  }
+
+  public getTooltipData(value: IStatusPoint): VisualTooltipDataItem[] {
+    console.log(value);
+
+    let tooltip: VisualTooltipDataItem[] = [];
+    value.tooltipValues.forEach((tooltipValue) => {
+      tooltip.push({
+        displayName: tooltipValue.displayName,
+        value: tooltipValue.dataLabel,
+      });
+    });
+
+    return tooltip;
   }
 }

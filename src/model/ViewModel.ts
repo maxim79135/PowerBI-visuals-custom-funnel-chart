@@ -37,12 +37,12 @@ export interface IDataPoint {
   statusPoints: IStatusPoint[];
   sumStatus: PrimitiveValue;
   selectionId: ISelectionId;
-  tooltipValues: ITooltipValue[];
 }
 
 export interface IStatusPoint {
   statusName: PrimitiveValue;
   value: PrimitiveValue;
+  tooltipValues: ITooltipValue[];
   color: string;
   selectionId: ISelectionId;
 }

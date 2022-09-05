@@ -79,9 +79,12 @@ export function visualTransform(
     (v) => v.source.roles["status"]
   );
   let statusCategoryValues = statusCategory.values;
-  let values = dataCategorical.values.find(
+  let valuesColumn = dataCategorical.values.find(
     (v) => v.source.roles["values"]
-  ).values;
+  );
+  let values = valuesColumn.values;
+  let tooltip = dataCategorical.values.find((v) => v.source.roles["tooltip"]);
+  let tooltipValues = tooltip.values;
 
   // push values in dataPoints
   let id = 0;
@@ -103,6 +106,52 @@ export function visualTransform(
     } else {
       color = settings.dataColors.color;
     }
+    let tooltipValues_ = [
+      {
+        displayName: stageCategory.source.displayName,
+        dataLabel: <string>stage,
+      },
+      {
+        displayName: statusCategory.source.displayName,
+        dataLabel: <string>statusCategoryValues[index],
+      },
+      {
+        displayName: valuesColumn.source.displayName,
+        dataLabel: prepareMeasureText(
+          values[index],
+          valuesColumn.source.type,
+          valuesColumn.objects
+            ? <string>valuesColumn.objects[0]["general"]["formatString"]
+            : valueFormatter.getFormatStringByColumn(valuesColumn.source),
+          1,
+          0,
+          false,
+          false,
+          "",
+          host.locale
+        ),
+      },
+      ...dataCategorical.values
+        .filter((v) => v.source.roles["tooltip"])
+        .map((tooltip) => {
+          return {
+            displayName: tooltip.source.displayName,
+            dataLabel: prepareMeasureText(
+              tooltip.values[index],
+              tooltip.source.type,
+              tooltip.objects
+                ? <string>tooltip.objects[0]["general"]["formatString"]
+                : valueFormatter.getFormatStringByColumn(tooltip.source),
+              1,
+              0,
+              false,
+              false,
+              "",
+              host.locale
+            ),
+          };
+        }),
+    ];
 
     if (!dataPoints.find((v) => v.stageName == stage)) {
       dataPoints.push({
@@ -115,6 +164,7 @@ export function visualTransform(
             value: values[index],
             selectionId: statusSelectionId,
             color: color,
+            tooltipValues: tooltipValues_,
           },
         ],
         sumStatus: 0,
@@ -122,7 +172,6 @@ export function visualTransform(
           .createSelectionIdBuilder()
           .withCategory(stageCategory, index)
           .createSelectionId(),
-        tooltipValues: undefined,
       });
       id++;
     } else {
@@ -133,6 +182,7 @@ export function visualTransform(
           value: values[index],
           selectionId: statusSelectionId,
           color: color,
+          tooltipValues: tooltipValues_,
         });
     }
   });

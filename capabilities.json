@@ -14,6 +14,11 @@
             "displayName": "Values",
             "name": "values",
             "kind": "Measure"
+        },
+        {
+            "displayName": "Tooltip",
+            "name": "tooltip",
+            "kind": "Measure"
         }
     ],
     "objects": {
@@ -403,6 +408,11 @@
                             {
                                 "bind": {
                                     "to": "values"
+                                }
+                            },
+                            {
+                                "bind": {
+                                    "to": "tooltip"
                                 }
                             }
                         ],
