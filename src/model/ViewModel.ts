@@ -38,7 +38,6 @@ export interface IDataPoint {
   sumStatus: PrimitiveValue;
   selectionId: ISelectionId;
   tooltipValues: ITooltipValue[];
-  x2: number;
 }
 
 export interface IStatusPoint {
@@ -57,4 +56,6 @@ export interface IFunnelChartViewModel {
   settings: FunnelChartSettings;
   dataPoints: IDataPoint[];
   maxStageName: PrimitiveValue;
+  statusBarX1: number;
+  statusBarX2: number;
 }

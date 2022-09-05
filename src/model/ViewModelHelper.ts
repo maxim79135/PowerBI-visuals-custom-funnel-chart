@@ -66,6 +66,8 @@ export function visualTransform(
       settings: settings,
       dataPoints: dataPoints,
       maxStageName: "",
+      statusBarX1: undefined,
+      statusBarX2: undefined,
     };
 
   let dataCategorical = dataViews[0].categorical;
@@ -121,7 +123,6 @@ export function visualTransform(
           .withCategory(stageCategory, index)
           .createSelectionId(),
         tooltipValues: undefined,
-        x2: undefined,
       });
       id++;
     } else {
@@ -153,6 +154,8 @@ export function visualTransform(
     dataPoints: dataPoints,
     settings: settings,
     maxStageName: maxStageName,
+    statusBarX1: undefined,
+    statusBarX2: undefined,
   };
 
   return viewModel;

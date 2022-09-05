@@ -156,7 +156,7 @@
                     }
                 },
                 "maxWidth": {
-                    "displayName": "Max width",
+                    "displayName": "Max width (perc)",
                     "displayNameKey": "maxWidth",
                     "type": {
                         "integer": true
@@ -167,7 +167,170 @@
         "status": {
             "displayName": "Status",
             "displayNameKey": "status",
-            "properties": {}
+            "properties": {
+                "textSize": {
+                    "displayName": "Font size",
+                    "displayNameKey": "textSize",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                },
+                "fontFamily": {
+                    "displayName": "Font family",
+                    "descriptionKey": "fontFamily",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "displayName": "Arial",
+                                "value": "Arial"
+                            },
+                            {
+                                "displayName": "Arial Black",
+                                "value": "Arial Black"
+                            },
+                            {
+                                "displayName": "Arial Unicode MS",
+                                "value": "Arial Unicode MS"
+                            },
+                            {
+                                "displayName": "Calibri",
+                                "value": "Calibri"
+                            },
+                            {
+                                "displayName": "Cambria",
+                                "value": "Cambria"
+                            },
+                            {
+                                "displayName": "Cambria Math",
+                                "value": "Cambria Math"
+                            },
+                            {
+                                "displayName": "Candara",
+                                "value": "Candara"
+                            },
+                            {
+                                "displayName": "Comic Sans MS",
+                                "value": "Comic Sans MS"
+                            },
+                            {
+                                "displayName": "Consolas",
+                                "value": "Consolas"
+                            },
+                            {
+                                "displayName": "Constantia",
+                                "value": "Constantia"
+                            },
+                            {
+                                "displayName": "Corbel",
+                                "value": "Corbel"
+                            },
+                            {
+                                "displayName": "Courier New",
+                                "value": "Courier New"
+                            },
+                            {
+                                "displayName": "Georgia",
+                                "value": "Georgia"
+                            },
+                            {
+                                "displayName": "Lucida Sans Unicode",
+                                "value": "Lucida Sans Unicode"
+                            },
+                            {
+                                "displayName": "Segoe (Bold)",
+                                "value": "segoe_bold"
+                            },
+                            {
+                                "displayName": "Segoe UI",
+                                "value": "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif"
+                            },
+                            {
+                                "displayName": "Segoe UI Light",
+                                "value": "segoe_light"
+                            },
+                            {
+                                "displayName": "Symbol",
+                                "value": "Symbol"
+                            },
+                            {
+                                "displayName": "Tahoma",
+                                "value": "Tahoma"
+                            },
+                            {
+                                "displayName": "Times New Roman",
+                                "value": "Times New Roman"
+                            },
+                            {
+                                "displayName": "Trebuchet MS",
+                                "value": "Trebuchet MS"
+                            },
+                            {
+                                "displayName": "Verdana",
+                                "value": "Verdana"
+                            },
+                            {
+                                "displayName": "Wingdings",
+                                "value": "Wingdings"
+                            }
+                        ]
+                    }
+                },
+                "color": {
+                    "displayName": "Color",
+                    "displayNameKey": "color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "isItalic": {
+                    "displayName": "Italic",
+                    "displayNameKey": "italic",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "isBold": {
+                    "displayName": "Bold",
+                    "displayNameKey": "bold",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "margin": {
+                    "displayName": "Margin",
+                    "displayNameKey": "margin",
+                    "type": {
+                        "integer": true
+                    }
+                },
+                "barPadding": {
+                    "displayName": "Bar padding",
+                    "displayNameKey": "barPadding",
+                    "type": {
+                        "integer": true
+                    }
+                },
+                "degree": {
+                    "displayName": "Funnel degree",
+                    "displayNameKey": "funnelDegree",
+                    "type": {
+                        "integer": true
+                    }
+                },
+                "minBarWidth": {
+                    "displayName": "Min funnel width (perc)",
+                    "displayNameKey": "minBarWidth",
+                    "type": {
+                        "integer": true
+                    }
+                }
+            }
         },
         "values": {
             "displayName": "Values",

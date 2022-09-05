@@ -162,6 +162,18 @@ export class FunnelChart implements IVisual {
       .selectAll("g.stage-container")
       .data(this.model.dataPoints);
 
+    // calc x1 coord
+    let maxTextProperties: TextProperties = {
+      fontFamily: settings.fontFamily,
+      fontSize: settings.textSize + "pt",
+      text: <string>this.model.maxStageName,
+    };
+    let width = Math.min(
+      textMeasurementService.measureSvgTextWidth(maxTextProperties),
+      (this.width * settings.maxWidth) / 100
+    );
+    this.model.statusBarX1 = width;
+
     let labels = stages.selectAll("text.stage-label").data((d) => [d]);
     let mergeElement = labels
       .enter()
@@ -175,19 +187,9 @@ export class FunnelChart implements IVisual {
           fontSize: settings.textSize + "pt",
           text: <string>d.stageName,
         };
-        let maxTextProperties: TextProperties = {
-          fontFamily: settings.fontFamily,
-          fontSize: settings.textSize + "pt",
-          text: <string>this.model.maxStageName,
-        };
-        let width = Math.min(
-          textMeasurementService.measureSvgTextWidth(maxTextProperties),
-          (this.width * settings.maxWidth) / 100
-        );
-        d.x2 = width;
         d.formattedStageName = textMeasurementService.getTailoredTextOrDefault(
           textProperties,
-          Math.round(width)
+          Math.round(this.model.statusBarX1)
         );
       })
       .attr("x", (d) => {
@@ -197,7 +199,8 @@ export class FunnelChart implements IVisual {
           text: <string>d.formattedStageName,
         };
         return (
-          d.x2 - textMeasurementService.measureSvgTextWidth(textProperties)
+          this.model.statusBarX1 -
+          textMeasurementService.measureSvgTextWidth(textProperties)
         );
       })
       .attr(
@@ -217,7 +220,10 @@ export class FunnelChart implements IVisual {
   }
 
   private drawFunnel() {
-    let data = this.model.dataPoints;
+    const settings = this.model.settings.status;
+    let degree = settings.degree;
+    const data = this.model.dataPoints;
+
     let stages = this.funnelContainer
       .selectAll("g.stage-container")
       .data(this.model.dataPoints);
@@ -232,19 +238,49 @@ export class FunnelChart implements IVisual {
       .merge(mergeElement)
       .attr("id", (d) => `status-container-${d.id}`);
 
+    // calc funnel degree
+    const stage = data.at(-1);
+    const statusBarY = this.stageScale(<string>stage.stageName);
+    const offsetX =
+      Math.tan((degree * Math.PI) / 180) * statusBarY + settings.margin;
+    let maxWidth =
+      this.width -
+      this.model.statusBarX1 -
+      2 * offsetX -
+      (stage.statusPoints.length - 1) * settings.barPadding -
+      (this.width - (this.model.statusBarX2 ?? this.width));
+    if (maxWidth < 0) {
+      degree =
+        (Math.atan(
+          ((this.model.statusBarX2 ?? this.width) -
+            this.model.statusBarX1 -
+            this.width * (settings.minBarWidth / 100) -
+            2 * settings.margin) /
+            2 /
+            statusBarY
+        ) *
+          180) /
+        Math.PI;
+      degree = Math.round(degree);
+    }
+
     data.forEach((stage, index) => {
       const statusBarY = this.stageScale(<string>stage.stageName);
       const offsetX =
-        Math.tan((FunnelChart.Config.degree * Math.PI) / 180) * statusBarY +
-        FunnelChart.Config.statusBarMargin;
-      let maxWidth = this.width - stage.x2 - 2 * offsetX;
+        Math.tan((degree * Math.PI) / 180) * statusBarY + settings.margin;
+      let maxWidth =
+        this.width -
+        this.model.statusBarX1 -
+        2 * offsetX -
+        (stage.statusPoints.length - 1) * settings.barPadding -
+        (this.width - (this.model.statusBarX2 ?? this.width));
 
       let statusContainer = this.funnelContainer.select(
         `#status-container-${index}`
       );
       statusContainer.attr(
         "transform",
-        `translate(${stage.x2 + offsetX}, ${statusBarY})`
+        `translate(${this.model.statusBarX1 + offsetX}, ${statusBarY})`
       );
 
       let statusBar = statusContainer
@@ -263,13 +299,16 @@ export class FunnelChart implements IVisual {
         .attr("x", (d, i) => {
           if (i == 0) return 0;
 
-          return Math.round(
-            statusScale(
-              <number>stage.statusPoints
-                .map((v) => v.value)
-                .filter((v, j) => j < i)
-                .reduce((acc, v) => Number(acc) + Number(v))
-            )
+          return (
+            Math.round(
+              statusScale(
+                <number>stage.statusPoints
+                  .map((v) => v.value)
+                  .filter((v, j) => j < i)
+                  .reduce((acc, v) => Number(acc) + Number(v))
+              )
+            ) +
+            i * settings.barPadding
           );
         })
         .attr("width", (d) => Math.round(statusScale(<number>d.value)))
@@ -301,6 +340,45 @@ export class FunnelChart implements IVisual {
           selector: null,
           validValues: {
             maxWidth: {
+              numberRange: {
+                min: 15,
+                max: 50,
+              },
+            },
+          },
+        });
+        break;
+
+      case "status":
+        this.addAnInstanceToEnumeration(instances, {
+          objectName,
+          properties: {
+            barPadding: this.model.settings.status.barPadding,
+            degree: this.model.settings.status.degree,
+            margin: this.model.settings.status.margin,
+            minBarWidth: this.model.settings.status.minBarWidth,
+          },
+          selector: null,
+          validValues: {
+            barPadding: {
+              numberRange: {
+                min: 5,
+                max: 30,
+              },
+            },
+            degree: {
+              numberRange: {
+                min: 10,
+                max: 45,
+              },
+            },
+            margin: {
+              numberRange: {
+                min: 5,
+                max: 30,
+              },
+            },
+            minBarWidth: {
               numberRange: {
                 min: 15,
                 max: 50,
