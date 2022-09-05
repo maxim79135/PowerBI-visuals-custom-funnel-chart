@@ -203,11 +203,18 @@ export class FunnelChart implements IVisual {
           textMeasurementService.measureSvgTextWidth(textProperties)
         );
       })
-      .attr(
-        "y",
-        (d) =>
-          this.stageScale(<string>d.stageName) + this.stageScale.bandwidth() / 2
-      )
+      .attr("y", (d) => {
+        let textProperties: TextProperties = {
+          fontFamily: settings.fontFamily,
+          fontSize: settings.textSize + "pt",
+          text: <string>d.stageName,
+        };
+        return (
+          this.stageScale(<string>d.stageName) +
+          this.stageScale.bandwidth() / 2 +
+          textMeasurementService.measureSvgTextHeight(textProperties) / 2
+        );
+      })
       .attr("heigh", this.stageScale.bandwidth())
       .style("font-size", settings.textSize + "pt")
       .style("font-family", settings.fontFamily)
