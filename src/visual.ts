@@ -170,11 +170,13 @@ export class FunnelChart implements IVisual {
     stages.exit().remove();
 
     this.drawStageLabels();
+    this.drawValueLabels();
     this.drawFunnel();
   }
 
   private drawStageLabels() {
-    let settings = this.model.settings.stageLabel;
+    const settings = this.model.settings.stageLabel;
+    const inverted = this.model.settings.funnel.invertStagePosition;
     let stages = this.funnelContainer
       .selectAll("g.stage-container")
       .data(this.model.dataPoints);
@@ -190,6 +192,12 @@ export class FunnelChart implements IVisual {
       (this.width * settings.maxWidth) / 100
     );
     this.model.statusBarX1 = width;
+    if (inverted) {
+      [this.model.statusBarX1, this.model.statusBarX2] = [
+        width,
+        this.width - width,
+      ];
+    }
 
     let labels = stages.selectAll("text.stage-label").data((d) => [d]);
     let mergeElement = labels
@@ -206,7 +214,7 @@ export class FunnelChart implements IVisual {
         };
         d.formattedStageName = textMeasurementService.getTailoredTextOrDefault(
           textProperties,
-          Math.round(this.model.statusBarX1)
+          Math.ceil(width)
         );
       })
       .attr("x", (d) => {
@@ -215,10 +223,14 @@ export class FunnelChart implements IVisual {
           fontSize: settings.textSize + "pt",
           text: <string>d.formattedStageName,
         };
-        return (
-          this.model.statusBarX1 -
-          textMeasurementService.measureSvgTextWidth(textProperties)
-        );
+        if (inverted) {
+          return this.model.statusBarX2;
+        } else {
+          return (
+            this.model.statusBarX1 -
+            textMeasurementService.measureSvgTextWidth(textProperties)
+          );
+        }
       })
       .attr("y", (d) => {
         let textProperties: TextProperties = {
@@ -243,8 +255,91 @@ export class FunnelChart implements IVisual {
     labels.exit().remove();
   }
 
+  private drawValueLabels() {
+    const settings = this.model.settings.valueLabel;
+    const inverted = this.model.settings.funnel.invertStagePosition;
+
+    let stages = this.funnelContainer
+      .selectAll("g.stage-container")
+      .data(this.model.dataPoints);
+
+    // calc x2 coord
+    let maxTextProperties: TextProperties = {
+      fontFamily: settings.fontFamily,
+      fontSize: settings.textSize + "pt",
+      text: <string>this.model.maxValueLabel,
+    };
+    let width = Math.min(
+      textMeasurementService.measureSvgTextWidth(maxTextProperties),
+      (this.width * settings.maxWidth) / 100
+    );
+
+    this.model.statusBarX2 = this.width - width;
+    if (inverted) {
+      [this.model.statusBarX1, this.model.statusBarX2] = [
+        width,
+        this.width - this.model.statusBarX1,
+      ];
+    }
+
+    let labels = stages.selectAll("text.value-label").data((d) => [d]);
+    let mergeElement = labels
+      .enter()
+      .append<SVGElement>("text")
+      .classed("value-label", true);
+    labels
+      .merge(mergeElement)
+      .each((d) => {
+        let textProperties: TextProperties = {
+          fontFamily: settings.fontFamily,
+          fontSize: settings.textSize + "pt",
+          text: <string>d.formattedSumStatus,
+        };
+
+        d.formattedSumStatus = textMeasurementService.getTailoredTextOrDefault(
+          textProperties,
+          Math.ceil(width)
+        );
+      })
+      .attr("x", (d) => {
+        let textProperties: TextProperties = {
+          fontFamily: settings.fontFamily,
+          fontSize: settings.textSize + "pt",
+          text: <string>d.formattedSumStatus,
+        };
+        if (inverted) {
+          return (
+            this.model.statusBarX1 -
+            textMeasurementService.measureSvgTextWidth(textProperties)
+          );
+        } else {
+          return this.model.statusBarX2;
+        }
+      })
+      .attr("y", (d) => {
+        let textProperties: TextProperties = {
+          fontFamily: settings.fontFamily,
+          fontSize: settings.textSize + "pt",
+          text: <string>d.stageName,
+        };
+        return (
+          this.stageScale(<string>d.stageName) +
+          this.stageScale.bandwidth() / 2 +
+          textMeasurementService.measureSvgTextHeight(textProperties) / 2
+        );
+      })
+      .attr("heigh", this.stageScale.bandwidth())
+      .style("font-size", settings.textSize + "pt")
+      .style("font-family", settings.fontFamily)
+      .style("font-weight", settings.isBold ? "bold" : "")
+      .style("font-style", settings.isItalic ? "italic" : "")
+      .style("fill", settings.color)
+      .text((d) => <string>d.formattedSumStatus);
+  }
+
   private drawFunnel() {
-    const settings = this.model.settings.status;
+    const settings = this.model.settings.funnel;
+    const inverted = this.model.settings.funnel.invertStagePosition;
     let degree = settings.degree;
     const data = this.model.dataPoints;
 
@@ -268,11 +363,10 @@ export class FunnelChart implements IVisual {
     const offsetX =
       Math.tan((degree * Math.PI) / 180) * statusBarY + settings.margin;
     let maxWidth =
-      this.width -
+      (this.model.statusBarX2 ?? this.width) -
       this.model.statusBarX1 -
       2 * offsetX -
-      (stage.statusPoints.length - 1) * settings.barPadding -
-      (this.width - (this.model.statusBarX2 ?? this.width));
+      (stage.statusPoints.length - 1) * settings.barPadding;
     if (maxWidth < 0) {
       degree =
         (Math.atan(
@@ -366,21 +460,46 @@ export class FunnelChart implements IVisual {
             maxWidth: {
               numberRange: {
                 min: 15,
-                max: 50,
+                max: 30,
               },
             },
           },
         });
         break;
 
-      case "status":
+      case "valueLabel":
         this.addAnInstanceToEnumeration(instances, {
           objectName,
           properties: {
-            barPadding: this.model.settings.status.barPadding,
-            degree: this.model.settings.status.degree,
-            margin: this.model.settings.status.margin,
-            minBarWidth: this.model.settings.status.minBarWidth,
+            maxWidth: this.model.settings.valueLabel.maxWidth,
+            decimalPlaces: this.model.settings.valueLabel.decimalPlaces,
+          },
+          selector: null,
+          validValues: {
+            maxWidth: {
+              numberRange: {
+                min: 15,
+                max: 30,
+              },
+            },
+            decimalPlaces: {
+              numberRange: {
+                min: 0,
+                max: 9,
+              },
+            },
+          },
+        });
+        break;
+
+      case "funnel":
+        this.addAnInstanceToEnumeration(instances, {
+          objectName,
+          properties: {
+            barPadding: this.model.settings.funnel.barPadding,
+            degree: this.model.settings.funnel.degree,
+            margin: this.model.settings.funnel.margin,
+            minBarWidth: this.model.settings.funnel.minBarWidth,
           },
           selector: null,
           validValues: {
@@ -451,8 +570,6 @@ export class FunnelChart implements IVisual {
   }
 
   public getTooltipData(value: IStatusPoint): VisualTooltipDataItem[] {
-    console.log(value);
-
     let tooltip: VisualTooltipDataItem[] = [];
     value.tooltipValues.forEach((tooltipValue) => {
       tooltip.push({

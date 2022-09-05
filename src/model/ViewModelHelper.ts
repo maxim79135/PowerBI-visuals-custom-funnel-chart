@@ -65,7 +65,8 @@ export function visualTransform(
     return {
       settings: settings,
       dataPoints: dataPoints,
-      maxStageName: "",
+      maxStageName: undefined,
+      maxValueLabel: undefined,
       statusBarX1: undefined,
       statusBarX2: undefined,
     };
@@ -83,8 +84,6 @@ export function visualTransform(
     (v) => v.source.roles["values"]
   );
   let values = valuesColumn.values;
-  let tooltip = dataCategorical.values.find((v) => v.source.roles["tooltip"]);
-  let tooltipValues = tooltip.values;
 
   // push values in dataPoints
   let id = 0;
@@ -168,6 +167,7 @@ export function visualTransform(
           },
         ],
         sumStatus: 0,
+        formattedSumStatus: undefined,
         selectionId: host
           .createSelectionIdBuilder()
           .withCategory(stageCategory, index)
@@ -188,22 +188,40 @@ export function visualTransform(
   });
 
   // calc sumStatus for each stage
-  dataPoints.forEach(
-    (v) =>
-      (v.sumStatus = v.statusPoints
-        .map((status) => status.value)
-        .reduce((acc, v) => Number(acc) + Number(v)))
-  );
+  dataPoints.forEach((v) => {
+    v.sumStatus = v.statusPoints
+      .map((status) => status.value)
+      .reduce((acc, v) => Number(acc) + Number(v));
+    v.formattedSumStatus = prepareMeasureText(
+      v.sumStatus,
+      valuesColumn.source.type,
+      valuesColumn.objects
+        ? <string>valuesColumn.objects[0]["general"]["formatString"]
+        : valueFormatter.getFormatStringByColumn(valuesColumn.source),
+      settings.valueLabel.displayUnit,
+      settings.valueLabel.decimalPlaces,
+      false,
+      false,
+      "",
+      host.locale
+    );
+  });
 
   // calc longest stage name
   let maxStageName = dataPoints
     .map((d) => d.stageName)
     .reduce((a, b) => (String(a).length > String(b).length ? a : b));
 
+  // calc longest value label
+  let maxValueLabel = dataPoints
+    .map((d) => d.formattedSumStatus)
+    .reduce((a, b) => (String(a).length > String(b).length ? a : b));
+
   viewModel = {
     dataPoints: dataPoints,
     settings: settings,
     maxStageName: maxStageName,
+    maxValueLabel: maxValueLabel,
     statusBarX1: undefined,
     statusBarX2: undefined,
   };

@@ -39,6 +39,18 @@ export class StageLabel {
   public maxWidth: number = 30;
 }
 
+export class ValueLabel {
+  public textSize: number = 10;
+  public fontFamily: string =
+    "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif";
+  public color: string = "#333333";
+  public isItalic: boolean = false;
+  public isBold: boolean = false;
+  public maxWidth: number = 30;
+  public displayUnit: number = 0;
+  public decimalPlaces: number = 0;
+}
+
 export class Status {
   public textSize: number = 10;
   public fontFamily: string =
@@ -46,10 +58,14 @@ export class Status {
   public color: string = "#333333";
   public isItalic: boolean = false;
   public isBold: boolean = false;
+}
+
+export class Funnel {
   public barPadding: number = 5;
   public degree: number = 30;
   public margin: number = 30;
   public minBarWidth: number = 15;
+  public invertStagePosition: boolean = false;
 }
 
 export class DataColors {
@@ -59,6 +75,8 @@ export class DataColors {
 
 export class FunnelChartSettings extends DataViewObjectsParser {
   public stageLabel: StageLabel = new StageLabel();
+  public valueLabel: ValueLabel = new ValueLabel();
   public status: Status = new Status();
   public dataColors: DataColors = new DataColors();
+  public funnel: Funnel = new Funnel();
 }
