@@ -354,24 +354,24 @@ export class FunnelChart implements IVisual {
     const statusBarY = this.stageScale(<string>stage.stageName);
     const offsetX =
       Math.tan((degree * Math.PI) / 180) * statusBarY + settings.margin;
+    let funnelWidth = this.model.statusBarX2 - this.model.statusBarX1;
+    let minBarWidth = funnelWidth * (settings.minBarWidth / 100);
     let maxWidth =
-      (this.model.statusBarX2 ?? this.width) -
-      this.model.statusBarX1 -
+      funnelWidth -
       2 * offsetX -
       (stage.statusPoints.length - 1) * settings.barPadding;
-    if (maxWidth < 0) {
+    console.log("Old degree", degree);
+    console.log("Width", maxWidth);
+    console.log("Min width", minBarWidth);
+    if (maxWidth < minBarWidth) {
       degree =
         (Math.atan(
-          ((this.model.statusBarX2 ?? this.width) -
-            this.model.statusBarX1 -
-            this.width * (settings.minBarWidth / 100) -
-            2 * settings.margin) /
-            2 /
-            statusBarY
+          (funnelWidth - minBarWidth - 2 * settings.margin) / (2 * statusBarY)
         ) *
           180) /
         Math.PI;
       degree = Math.round(degree);
+      console.log("New degree", degree);
     }
 
     data.forEach((stage, index) => {
@@ -379,11 +379,9 @@ export class FunnelChart implements IVisual {
       const offsetX =
         Math.tan((degree * Math.PI) / 180) * statusBarY + settings.margin;
       let maxWidth =
-        this.width -
-        this.model.statusBarX1 -
+        funnelWidth -
         2 * offsetX -
-        (stage.statusPoints.length - 1) * settings.barPadding -
-        (this.width - (this.model.statusBarX2 ?? this.width));
+        (stage.statusPoints.length - 1) * settings.barPadding;
 
       let statusContainer = this.funnelContainer.select(
         `#status-container-${index}`
@@ -445,7 +443,7 @@ export class FunnelChart implements IVisual {
           d.formattedStatusName =
             textMeasurementService.getTailoredTextOrDefault(
               textProperties,
-              Math.ceil(Math.round(statusScale(<number>d.value)))
+              Math.ceil(statusScale(<number>d.value))
             );
         })
         .attr("dominant-baseline", "middle")
@@ -474,7 +472,19 @@ export class FunnelChart implements IVisual {
         .style("font-weight", statusSettings.isBold ? "bold" : "")
         .style("font-style", statusSettings.isItalic ? "italic" : "")
         .style("fill", statusSettings.color)
-        .text((d) => <string>d.formattedStatusName);
+        .text((d) => {
+          let textProperties: TextProperties = {
+            fontFamily: statusSettings.fontFamily,
+            fontSize: statusSettings.textSize + "pt",
+            text: <string>d.statusName,
+          };
+          if (
+            textMeasurementService.measureSvgTextWidth(textProperties) >
+            Math.ceil(statusScale(<number>d.value))
+          )
+            return null;
+          return <string>d.statusName;
+        });
 
       statusBar.exit().remove();
       statusLabel.exit().remove();
