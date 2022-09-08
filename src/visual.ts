@@ -756,9 +756,20 @@ export class FunnelChart implements IVisual {
   private addContextMenu() {
     let area = select("rect.rect-container");
     let bars = this.funnelContainer.selectAll("rect.status-bar");
+    let statuses = this.funnelContainer.selectAll("text.status-label");
     let stages = this.funnelContainer.selectAll("text.stage-label");
 
     bars.on("contextmenu", (d: IStatusPoint) => {
+      const mouseEvent: MouseEvent = getEvent();
+
+      this.selectionManager.showContextMenu(d.selectionId, {
+        x: mouseEvent.x,
+        y: mouseEvent.y,
+      });
+      mouseEvent.preventDefault();
+    });
+    
+    statuses.on("contextmenu", (d: IStatusPoint) => {
       const mouseEvent: MouseEvent = getEvent();
 
       this.selectionManager.showContextMenu(d.selectionId, {
