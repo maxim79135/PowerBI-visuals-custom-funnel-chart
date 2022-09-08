@@ -133,6 +133,7 @@ export class FunnelChart implements IVisual {
       (tooltipEvent: IStatusPoint) => tooltipEvent.selectionId
     );
     this.synSelections();
+    this.addContextMenu();
   }
 
   public updateViewport(options: VisualUpdateOptions) {
@@ -730,5 +731,29 @@ export class FunnelChart implements IVisual {
     return selectionIds.some((currentSelectionId: ISelectionId) => {
       return currentSelectionId.includes(selectionId);
     });
+  }
+
+  private addContextMenu() {
+    let area = select("rect.rect-container");
+    let bars = this.funnelContainer.selectAll("rect.status-bar");
+    let stages = this.funnelContainer.selectAll("text.stage-label");
+
+    bars.on("contextmenu", (d: IStatusPoint) => {
+      const mouseEvent: MouseEvent = getEvent();
+
+      this.selectionManager.showContextMenu(d.selectionId, {
+        x: mouseEvent.x,
+        y: mouseEvent.y,
+      });
+      mouseEvent.preventDefault();
+    });
+
+    // area.on("contextmenu", () => {
+    //   const mouseEvent: MouseEvent = getEvent();
+    //   this.selectionManager.showContextMenu(
+    //     {},
+    //     { x: mouseEvent.x, y: mouseEvent.y }
+    //   );
+    // });
   }
 }
