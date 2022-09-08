@@ -127,11 +127,18 @@ export class FunnelChart implements IVisual {
 
     this.updateViewport(options);
     this.drawFunnelChart();
+    
     this.tooltipServiceWrapper.addTooltip(
       this.funnelContainer.selectAll("rect.status-bar"),
       (tooltipEvent: IStatusPoint) => this.getTooltipData(tooltipEvent),
       (tooltipEvent: IStatusPoint) => tooltipEvent.selectionId
     );
+    this.tooltipServiceWrapper.addTooltip(
+      this.funnelContainer.selectAll("text.status-label"),
+      (tooltipEvent: IStatusPoint) => this.getTooltipData(tooltipEvent),
+      (tooltipEvent: IStatusPoint) => tooltipEvent.selectionId
+    );
+
     this.synSelections();
     this.addContextMenu();
   }
@@ -653,6 +660,7 @@ export class FunnelChart implements IVisual {
   public synSelections() {
     let area = select("rect.rect-container");
     let bars = this.funnelContainer.selectAll("rect.status-bar");
+    let statuses = this.funnelContainer.selectAll("text.status-label");
     let stages = this.funnelContainer.selectAll("text.stage-label");
 
     area.on("click", () => {
@@ -668,6 +676,18 @@ export class FunnelChart implements IVisual {
     });
 
     bars.on("click", (d: IStatusPoint) => {
+      const mouseEvent: MouseEvent = getEvent();
+      const isCtrlPressed: boolean = mouseEvent.ctrlKey;
+
+      this.selectionManager
+        .select(d.selectionId, isCtrlPressed)
+        .then((ids: ISelectionId[]) => {
+          this.syncSelectionState(bars, ids, 1);
+          if (!isCtrlPressed) this.syncSelectionState(stages, []);
+        });
+    });
+
+    statuses.on("click", (d: IStatusPoint) => {
       const mouseEvent: MouseEvent = getEvent();
       const isCtrlPressed: boolean = mouseEvent.ctrlKey;
 
