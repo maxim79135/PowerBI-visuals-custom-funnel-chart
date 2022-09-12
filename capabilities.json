@@ -568,27 +568,16 @@
             ],
             "categorical": {
                 "categories": {
-                    "select": [
-                        {
-                            "for": {
-                                "in": "stage"
-                            }
-                        },
-                        {
-                            "bind": {
-                                "to": "status"
-                            }
-                        }
-                    ],
+                    "for": {
+                        "in": "stage"
+                    },
                     "dataReductionAlgorithm": {
-                        "top": {
-                            "count": 10000
-                        }
+                        "top": {}
                     }
                 },
                 "values": {
                     "group": {
-                        "by": "Category",
+                        "by": "status",
                         "select": [
                             {
                                 "bind": {
