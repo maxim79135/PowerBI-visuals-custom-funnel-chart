@@ -76,6 +76,7 @@ export class FunnelChart implements IVisual {
     xScalePadding: 0,
     degree: 40,
     statusBarMargin: 10,
+    maxHeightScale: 3,
   };
 
   private host: IVisualHost;
@@ -153,15 +154,62 @@ export class FunnelChart implements IVisual {
       "width:" + w + "px;height:" + h + "px;overflow-y:auto;overflow-x:hidden;"
     );
 
+    let height = options.viewport.height;
+    let xScaledMax = height / FunnelChart.Config.maxHeightScale;
+    let xScaledMin = this.model.settings.funnel.minBarHeight;
+    let outerPadding = -FunnelChart.Config.outerPadding;
+
+    // calcX is the calculated height of the bar+inner padding that will be required if we simply
+    // distribute the height with the bar count (no scrolling)
+    let calcX =
+      this.height /
+      (2 * FunnelChart.Config.outerPadding -
+        FunnelChart.Config.xScalePadding +
+        this.model.dataPoints.length);
+
+    // calcHeight is the height required for the entire bar chart
+    // if min allowed bar height is used. (This is needed for setting the scroll height)
+    let calcHeight =
+      (-2 * outerPadding -
+        FunnelChart.Config.xScalePadding +
+        this.model.dataPoints.length) *
+      xScaledMin;
+
+    if (calcX > xScaledMax) {
+      if (xScaledMax >= xScaledMin) {
+        let tempouterPadding =
+          (height -
+            (-FunnelChart.Config.xScalePadding + this.model.dataPoints.length) *
+              xScaledMax) /
+          (2 * xScaledMax);
+        if (tempouterPadding > 0) {
+          outerPadding = tempouterPadding;
+        }
+      } else {
+        let tempOuterPadding =
+          (height -
+            (-FunnelChart.Config.xScalePadding + this.model.dataPoints.length) *
+              xScaledMin) /
+          (2 * xScaledMin);
+        if (tempOuterPadding > 0) {
+          outerPadding = tempOuterPadding;
+        }
+      }
+    } else {
+      if (calcX < xScaledMin && calcHeight > height) {
+        height = calcHeight;
+      }
+    }
+
     this.stageScale = scaleBand()
       .domain(this.model.dataPoints.map((d) => <string>d.stageName))
-      .rangeRound([5, this.height])
-      .padding(FunnelChart.Config.barPadding)
-      .paddingOuter(FunnelChart.Config.outerPadding);
+      .rangeRound([5, height])
+      .padding(this.model.settings.funnel.verticalBarPadding / 100)
+      .paddingOuter(outerPadding);
 
     // update sizes
     this.svg.attr("width", this.width);
-    this.svg.attr("height", this.height);
+    this.svg.attr("height", height);
     this.emptyRectContainer.attr("width", this.width);
     this.emptyRectContainer.attr("height", this.height);
   }
@@ -573,16 +621,24 @@ export class FunnelChart implements IVisual {
           objectName,
           properties: {
             barPadding: this.model.settings.funnel.barPadding,
+            verticalBarPadding: this.model.settings.funnel.verticalBarPadding,
             degree: this.model.settings.funnel.degree,
             margin: this.model.settings.funnel.margin,
             minBarWidth: this.model.settings.funnel.minBarWidth,
+            minBarHeight: this.model.settings.funnel.minBarHeight,
           },
           selector: null,
           validValues: {
             barPadding: {
               numberRange: {
-                min: 5,
+                min: 0,
                 max: 30,
+              },
+            },
+            verticalBarPadding: {
+              numberRange: {
+                min: 0,
+                max: 50,
               },
             },
             degree: {
@@ -601,6 +657,12 @@ export class FunnelChart implements IVisual {
               numberRange: {
                 min: 15,
                 max: 50,
+              },
+            },
+            minBarHeight: {
+              numberRange: {
+                min: 20,
+                max: 100,
               },
             },
           },

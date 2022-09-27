@@ -92,7 +92,9 @@ export function visualTransform(
   });
 
   // add statuses and values
-  let statusMetadata = metadata.columns.find((v) => v.index == 1);
+  let statusMetadata = metadata.columns.find((v) => v.roles["status"]) ?? {
+    displayName: "",
+  };
   valuesColumnGrouped.forEach((status, index) => {
     let values = status.values.filter((v) => v.source.roles["values"])[0];
     let tooltips = status.values.filter((v) => v.source.roles["tooltip"]);

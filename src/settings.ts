@@ -64,9 +64,11 @@ export class Status {
 
 export class Funnel {
   public barPadding: number = 5;
+  public verticalBarPadding: number = 25;
   public degree: number = 30;
   public margin: number = 30;
   public minBarWidth: number = 15;
+  public minBarHeight: number = 30;
   public invertStagePosition: boolean = false;
 }
 

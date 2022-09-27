@@ -384,6 +384,20 @@
                     "type": {
                         "integer": true
                     }
+                },
+                "minBarHeight": {
+                    "displayName": "Min funnel height (px)",
+                    "displayNameKey": "minBarHeight",
+                    "type": {
+                        "integer": true
+                    }
+                },
+                "verticalBarPadding": {
+                    "displayName": "Vertical bar padding (perc)",
+                    "displayNameKey": "verticalBarPadding",
+                    "type": {
+                        "integer": true
+                    }
                 }
             }
         },
