@@ -180,6 +180,11 @@
             "displayName": "Values",
             "displayNameKey": "Values",
             "properties": {
+                "show": {
+                    "type": {
+                        "bool": true
+                    }
+                },
                 "textSize": {
                     "displayName": "Font size",
                     "displayNameKey": "textSize",
@@ -357,6 +362,22 @@
                         "bool": true
                     }
                 },
+                "funnelType": {
+                    "displayName": "Funnel type",
+                    "displayNameKey": "funnelType",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "displayName": "Relative to the angle of the funnel",
+                                "value": "angle"
+                            },
+                            {
+                                "displayName": "Relative to the stage value",
+                                "value": "stage"
+                            }
+                        ]
+                    }
+                },
                 "margin": {
                     "displayName": "Margin",
                     "displayNameKey": "margin",
@@ -398,6 +419,13 @@
                     "type": {
                         "integer": true
                     }
+                },
+                "scale": {
+                    "displayName": "Funnel scale (perc)",
+                    "displayNameKey": "scale",
+                    "type": {
+                        "integer": true
+                    }
                 }
             }
         },
@@ -405,6 +433,18 @@
             "displayName": "Status",
             "displayNameKey": "status",
             "properties": {
+                "show": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "statusValueOnFunnel": {
+                    "displayName": "Show status value inside the funnel rect",
+                    "displayNameKey": "statusValueOnFunnel",
+                    "type": {
+                        "bool": true
+                    }
+                },
                 "textSize": {
                     "displayName": "Font size",
                     "displayNameKey": "textSize",
@@ -538,6 +578,22 @@
                     "type": {
                         "bool": true
                     }
+                },
+                "displayUnit": {
+                    "displayName": "Display Unit",
+                    "descriptionKey": "displayUnit",
+                    "type": {
+                        "formatting": {
+                            "labelDisplayUnits": true
+                        }
+                    }
+                },
+                "decimalPlaces": {
+                    "displayName": "Decimal places",
+                    "displayNameKey": "precision",
+                    "type": {
+                        "integer": true
+                    }
                 }
             }
         },
@@ -594,13 +650,13 @@
                         "by": "status",
                         "select": [
                             {
-                                "bind": {
-                                    "to": "values"
+                                "for": {
+                                    "in": "values"
                                 }
                             },
                             {
-                                "bind": {
-                                    "to": "tooltip"
+                                "for": {
+                                    "in": "tooltip"
                                 }
                             }
                         ],

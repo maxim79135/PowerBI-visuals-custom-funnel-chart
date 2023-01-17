@@ -51,6 +51,7 @@ export class ValueLabel {
   public displayUnit: number = 0;
   public decimalPlaces: number = 0;
   public margin: number = 0;
+  public show: boolean = true;
 }
 
 export class Status {
@@ -60,9 +61,14 @@ export class Status {
   public color: string = "#333333";
   public isItalic: boolean = false;
   public isBold: boolean = false;
+  public show: boolean = true;
+  public statusValueOnFunnel: boolean = false;
+  public displayUnit: number = 0;
+  public decimalPlaces: number = 0;
 }
 
 export class Funnel {
+  public funnelType: string = "angle";
   public barPadding: number = 5;
   public verticalBarPadding: number = 25;
   public degree: number = 30;
@@ -70,6 +76,7 @@ export class Funnel {
   public minBarWidth: number = 15;
   public minBarHeight: number = 30;
   public invertStagePosition: boolean = false;
+  public scale: number = 100;
 }
 
 export class DataColors {

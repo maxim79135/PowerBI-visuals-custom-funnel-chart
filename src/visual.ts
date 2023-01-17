@@ -151,10 +151,10 @@ export class FunnelChart implements IVisual {
     // update size canvas
     this.divContainer.attr(
       "style",
-      "width:" + w + "px;height:" + h + "px;overflow-y:auto;overflow-x:hidden;"
+      "width:" + w + "px;height:" + h + "px;overflow-y:auto;overflow-x:auto;"
     );
 
-    let height = options.viewport.height;
+    let height = options.viewport.height * 0.95;
     let xScaledMax = height / FunnelChart.Config.maxHeightScale;
     let xScaledMin = this.model.settings.funnel.minBarHeight;
     let outerPadding = -FunnelChart.Config.outerPadding;
@@ -201,6 +201,40 @@ export class FunnelChart implements IVisual {
       }
     }
 
+    let stageSettings = this.model.settings.stageLabel;
+    let stageTextProperties: TextProperties = {
+      fontFamily: stageSettings.fontFamily,
+      fontSize: stageSettings.textSize + "pt",
+      text: <string>this.model.maxStageName,
+    };
+    let width = Math.min(
+      textMeasurementService.measureSvgTextWidth(stageTextProperties),
+      (this.width * stageSettings.maxWidth) / 100
+    );
+    width = Math.ceil(width) + 5;
+    let stageLabelWidth = width + stageSettings.margin;
+
+    let valueSettings = this.model.settings.valueLabel;
+    let valueTextProperties: TextProperties = {
+      fontFamily: valueSettings.fontFamily,
+      fontSize: valueSettings.textSize + "pt",
+      text: <string>this.model.maxValueLabel,
+    };
+    width = Math.min(
+      textMeasurementService.measureSvgTextWidth(valueTextProperties),
+      (this.width * valueSettings.maxWidth) / 100
+    );
+
+    let valueLabelWidth = width + valueSettings.margin;
+    let funnelWidth =
+      ((this.width - stageLabelWidth - valueLabelWidth) * 100) /
+      this.model.settings.funnel.scale;
+    let calcWidth = stageLabelWidth + valueLabelWidth + funnelWidth;
+
+    if (calcWidth > w) {
+      this.width = calcWidth;
+    }
+
     this.stageScale = scaleBand()
       .domain(this.model.dataPoints.map((d) => <string>d.stageName))
       .rangeRound([5, height])
@@ -208,6 +242,8 @@ export class FunnelChart implements IVisual {
       .paddingOuter(outerPadding);
 
     // update sizes
+    console.log(this.width, height);
+
     this.svg.attr("width", this.width);
     this.svg.attr("height", height);
     this.emptyRectContainer.attr("width", this.width);
@@ -251,6 +287,7 @@ export class FunnelChart implements IVisual {
       textMeasurementService.measureSvgTextWidth(maxTextProperties),
       (this.width * settings.maxWidth) / 100
     );
+    width = Math.ceil(width) + 5;
     this.model.statusBarX1 = width + settings.margin;
     if (inverted) {
       [this.model.statusBarX1, this.model.statusBarX2] = [
@@ -274,7 +311,7 @@ export class FunnelChart implements IVisual {
         };
         d.formattedStageName = textMeasurementService.getTailoredTextOrDefault(
           textProperties,
-          Math.ceil(width)
+          width
         );
       })
       .attr("dominant-baseline", "middle")
@@ -316,6 +353,7 @@ export class FunnelChart implements IVisual {
     let stages = this.funnelContainer
       .selectAll("g.stage-container")
       .data(this.model.dataPoints);
+    stages.selectAll("text.value-label").remove();
 
     // calc x2 coord
     let maxTextProperties: TextProperties = {
@@ -329,60 +367,67 @@ export class FunnelChart implements IVisual {
     );
 
     this.model.statusBarX2 = this.width - width - settings.margin;
+    if (!settings.show) this.model.statusBarX2 = this.width - settings.margin;
     if (inverted) {
       [this.model.statusBarX1, this.model.statusBarX2] = [
         width + settings.margin,
         this.width - this.model.statusBarX1,
       ];
+      if (!settings.show) this.model.statusBarX1 = settings.margin;
     }
+    console.log(this.model.statusBarX1, this.model.statusBarX2);
 
-    let labels = stages.selectAll("text.value-label").data((d) => [d]);
-    let mergeElement = labels
-      .enter()
-      .append<SVGElement>("text")
-      .classed("value-label", true);
-    labels
-      .merge(mergeElement)
-      .each((d) => {
-        let textProperties: TextProperties = {
-          fontFamily: settings.fontFamily,
-          fontSize: settings.textSize + "pt",
-          text: <string>d.formattedSumStatus,
-        };
+    if (settings.show) {
+      let labels = stages.selectAll("text.value-label").data((d) => [d]);
+      let mergeElement = labels
+        .enter()
+        .append<SVGElement>("text")
+        .classed("value-label", true);
+      labels
+        .merge(mergeElement)
+        .each((d) => {
+          let textProperties: TextProperties = {
+            fontFamily: settings.fontFamily,
+            fontSize: settings.textSize + "pt",
+            text: <string>d.formattedSumStatus,
+          };
 
-        d.formattedSumStatus = textMeasurementService.getTailoredTextOrDefault(
-          textProperties,
-          Math.ceil(width)
-        );
-      })
-      .attr("dominant-baseline", "middle")
-      .attr("x", (d) => {
-        let textProperties: TextProperties = {
-          fontFamily: settings.fontFamily,
-          fontSize: settings.textSize + "pt",
-          text: <string>d.formattedSumStatus,
-        };
-        if (inverted) {
-          return (
-            this.model.statusBarX1 -
-            textMeasurementService.measureSvgTextWidth(textProperties)
-          );
-        } else {
-          return this.model.statusBarX2;
-        }
-      })
-      .attr(
-        "y",
-        (d) =>
-          this.stageScale(<string>d.stageName) + this.stageScale.bandwidth() / 2
-      )
-      .attr("heigh", this.stageScale.bandwidth())
-      .style("font-size", settings.textSize + "pt")
-      .style("font-family", settings.fontFamily)
-      .style("font-weight", settings.isBold ? "bold" : "")
-      .style("font-style", settings.isItalic ? "italic" : "")
-      .style("fill", settings.color)
-      .text((d) => <string>d.formattedSumStatus);
+          d.formattedSumStatus =
+            textMeasurementService.getTailoredTextOrDefault(
+              textProperties,
+              Math.ceil(width)
+            );
+        })
+        .attr("dominant-baseline", "middle")
+        .attr("x", (d) => {
+          let textProperties: TextProperties = {
+            fontFamily: settings.fontFamily,
+            fontSize: settings.textSize + "pt",
+            text: <string>d.formattedSumStatus,
+          };
+          if (inverted) {
+            return (
+              this.model.statusBarX1 -
+              textMeasurementService.measureSvgTextWidth(textProperties)
+            );
+          } else {
+            return this.model.statusBarX2;
+          }
+        })
+        .attr(
+          "y",
+          (d) =>
+            this.stageScale(<string>d.stageName) +
+            this.stageScale.bandwidth() / 2
+        )
+        .attr("heigh", this.stageScale.bandwidth())
+        .style("font-size", settings.textSize + "pt")
+        .style("font-family", settings.fontFamily)
+        .style("font-weight", settings.isBold ? "bold" : "")
+        .style("font-style", settings.isItalic ? "italic" : "")
+        .style("fill", settings.color)
+        .text((d) => <string>d.formattedSumStatus);
+    }
   }
 
   private drawFunnel() {
@@ -416,9 +461,6 @@ export class FunnelChart implements IVisual {
       funnelWidth -
       2 * offsetX -
       (stage.statusPoints.length - 1) * settings.barPadding;
-    console.log("Old degree", degree);
-    console.log("Width", maxWidth);
-    console.log("Min width", minBarWidth);
     if (maxWidth < minBarWidth) {
       degree =
         (Math.atan(
@@ -432,24 +474,80 @@ export class FunnelChart implements IVisual {
 
     data.forEach((stage, index) => {
       const statusBarY = this.stageScale(<string>stage.stageName);
-      const offsetX =
+      let offsetX =
         Math.tan((degree * Math.PI) / 180) * statusBarY + settings.margin;
-      let maxWidth =
-        funnelWidth -
-        2 * offsetX -
-        (stage.statusPoints.length - 1) * settings.barPadding;
+      let maxWidth: number;
+      if (settings.funnelType == "stage") {
+        let width =
+          funnelWidth - (stage.statusPoints.length - 1) * settings.barPadding;
+        let statusScale = d3
+          .scaleLinear()
+          .domain([0, <number>this.model.maxStageValue])
+          .range([0, funnelWidth]);
+        maxWidth = statusScale(<number>stage.sumStatus) - 2 * settings.margin;
+        // if (maxWidth < minBarWidth) maxWidth = minBarWidth;
+        console.log(maxWidth);
+
+        offsetX = width / 2 - maxWidth / 2;
+      } else {
+        maxWidth =
+          funnelWidth -
+          2 * offsetX -
+          (stage.statusPoints.length - 1) * settings.barPadding;
+      }
 
       let statusContainer = this.funnelContainer.select(
         `#status-container-${index}`
       );
+      statusContainer.selectAll("text.status-label").remove();
       statusContainer.attr(
         "transform",
         `translate(${this.model.statusBarX1 + offsetX}, ${statusBarY})`
       );
       let statusScale = d3
         .scaleLinear()
+        // .domain([0, (<number>stage.sumStatus * settings.scale) / 100])
         .domain([0, <number>stage.sumStatus])
         .range([0, maxWidth]);
+      console.log(maxWidth);
+
+      // change values to min, if value < min
+      // let isChangeStatusValues = false;
+      // for (let i = 0; i < stage.statusPoints.length; i++) {
+      //   let width = statusScale(<number>stage.statusPoints[i].value);
+      //   if (width < minBarWidth) {
+      //     stage.statusPoints[i].value =
+      //       (minBarWidth * <number>stage.statusPoints[i].value) / width;
+      //     isChangeStatusValues = true;
+      //   }
+      // }
+      let newSumStatusValues = 0;
+      let newMaxStageWidth = 0;
+      stage.statusPoints.forEach((v) => {
+        let width = statusScale(<number>v.value);
+        newMaxStageWidth += width < minBarWidth ? minBarWidth : width;
+        newSumStatusValues +=
+          width < minBarWidth
+            ? (minBarWidth * <number>v.value) / width
+            : <number>v.value;
+      });
+
+      // if (settings.funnelType == "stage") {
+      //   console.log(this.model.statusBarX1, this.model.statusBarX2);
+
+      //   statusScale = d3
+      //     .scaleLinear()
+      //     .domain([0, <number>this.model.sumAllStageValue])
+      //     .range([0, funnelWidth]);
+      //   statusContainer.attr(
+      //     "transform",
+      //     `translate(${
+      //       this.model.statusBarX1 +
+      //       offsetX -
+      //       statusScale(<number>stage.sumStatus) / 2
+      //     }, ${statusBarY})`
+      //   );
+      // }
 
       // add status bar
       let statusBar = statusContainer
@@ -462,88 +560,116 @@ export class FunnelChart implements IVisual {
       statusBar
         .merge(mergeStatus)
         .attr("x", (d, i) => {
+          let width = Math.round(statusScale(<number>d.value));
           if (i == 0) return 0;
+          let newScale = d3.scaleLinear();
+          if (width < minBarWidth)
+            newScale
+              .range([0, newMaxStageWidth])
+              .domain([0, <number>stage.sumStatus]);
+          else newScale.range([0, maxWidth]).domain([0, newSumStatusValues]);
 
-          return (
-            Math.round(
-              statusScale(
-                <number>stage.statusPoints
-                  .map((v) => v.value)
-                  .filter((v, j) => j < i)
-                  .reduce((acc, v) => Number(acc) + Number(v))
-              )
-            ) +
-            i * settings.barPadding
-          );
+          let sumStatus = 0;
+          stage.statusPoints
+            .map((v) => v.value)
+            .filter((v, j) => j < i)
+            .forEach((v) => (sumStatus += newScale(<number>v)));
+          return Math.round(sumStatus) + i * settings.barPadding;
         })
-        .attr("width", (d) => Math.round(statusScale(<number>d.value)))
+        .attr("width", (d) => {
+          let width = Math.round(statusScale(<number>d.value));
+          let newScale = d3.scaleLinear();
+          console.log(d.statusName, width, minBarWidth);
+          
+          if (width < minBarWidth)
+            return newScale
+              .range([0, newMaxStageWidth])
+              .domain([0, <number>stage.sumStatus])(<number>d.value);
+          else
+            return newScale
+              .range([0, maxWidth])
+              .domain([0, newSumStatusValues])(<number>d.value);
+
+          // if (width > maxWidth) return maxWidth;
+          return width;
+        })
         .attr("height", this.stageScale.bandwidth())
         .style("fill", (d) => d.color);
 
       // add status label
-      let statusLabel = statusContainer
-        .selectAll("text.status-label")
-        .data(stage.statusPoints);
-      let mergeStatusLabel = statusLabel
-        .enter()
-        .append("text")
-        .classed("status-label", true);
-      statusLabel
-        .merge(mergeStatusLabel)
-        .each((d) => {
-          let textProperties: TextProperties = {
-            fontFamily: statusSettings.fontFamily,
-            fontSize: statusSettings.textSize + "pt",
-            text: <string>d.statusName,
-          };
-          d.formattedStatusName =
-            textMeasurementService.getTailoredTextOrDefault(
-              textProperties,
-              Math.ceil(statusScale(<number>d.value))
+      if (this.model.settings.status.show) {
+        let statusLabel = statusContainer
+          .selectAll("text.status-label")
+          .data(stage.statusPoints);
+        let mergeStatusLabel = statusLabel
+          .enter()
+          .append("text")
+          .classed("status-label", true);
+        statusLabel
+          .merge(mergeStatusLabel)
+          .each((d) => {
+            let textProperties: TextProperties = {
+              fontFamily: statusSettings.fontFamily,
+              fontSize: statusSettings.textSize + "pt",
+              text: this.model.settings.status.statusValueOnFunnel
+                ? <string>d.formattedValue
+                : <string>d.statusName,
+            };
+            d.formattedStatusName =
+              textMeasurementService.getTailoredTextOrDefault(
+                textProperties,
+                Math.ceil(statusScale(<number>d.value))
+              );
+          })
+          .attr("dominant-baseline", "middle")
+          .attr("text-anchor", "middle")
+          .attr("x", (d, i) => {
+            let baseOffset =
+              Math.round(statusScale(<number>d.value)) / 2 +
+              i * settings.barPadding;
+
+            if (i == 0) return baseOffset;
+            return (
+              Math.round(
+                statusScale(
+                  <number>stage.statusPoints
+                    .map((v) => v.value)
+                    .filter((v, j) => j < i)
+                    .reduce((acc, v) => Number(acc) + Number(v))
+                )
+              ) + baseOffset
             );
-        })
-        .attr("dominant-baseline", "middle")
-        .attr("text-anchor", "middle")
-        .attr("x", (d, i) => {
-          let baseOffset =
-            Math.round(statusScale(<number>d.value)) / 2 +
-            i * settings.barPadding;
-
-          if (i == 0) return baseOffset;
-          return (
-            Math.round(
-              statusScale(
-                <number>stage.statusPoints
-                  .map((v) => v.value)
-                  .filter((v, j) => j < i)
-                  .reduce((acc, v) => Number(acc) + Number(v))
-              )
-            ) + baseOffset
-          );
-        })
-        .attr("y", (d) => this.stageScale.bandwidth() / 2)
-        .attr("heigh", this.stageScale.bandwidth())
-        .style("font-size", statusSettings.textSize + "pt")
-        .style("font-family", statusSettings.fontFamily)
-        .style("font-weight", statusSettings.isBold ? "bold" : "")
-        .style("font-style", statusSettings.isItalic ? "italic" : "")
-        .style("fill", statusSettings.color)
-        .text((d) => {
-          let textProperties: TextProperties = {
-            fontFamily: statusSettings.fontFamily,
-            fontSize: statusSettings.textSize + "pt",
-            text: <string>d.statusName,
-          };
-          if (
-            textMeasurementService.measureSvgTextWidth(textProperties) >
-            Math.ceil(statusScale(<number>d.value))
-          )
-            return null;
-          return <string>d.statusName;
-        });
-
+          })
+          .attr("y", (d) => this.stageScale.bandwidth() / 2)
+          .attr("heigh", this.stageScale.bandwidth())
+          .style("font-size", statusSettings.textSize + "pt")
+          .style("font-family", statusSettings.fontFamily)
+          .style("font-weight", statusSettings.isBold ? "bold" : "")
+          .style("font-style", statusSettings.isItalic ? "italic" : "")
+          .style("fill", statusSettings.color)
+          .text((d) => {
+            let textProperties: TextProperties = {
+              fontFamily: statusSettings.fontFamily,
+              fontSize: statusSettings.textSize + "pt",
+              text: this.model.settings.status.statusValueOnFunnel
+                ? <string>d.formattedValue
+                : <string>d.statusName,
+            };
+            if (
+              textMeasurementService.measureSvgTextWidth(textProperties) >
+              Math.ceil(statusScale(<number>d.value))
+            )
+              return null;
+            return this.model.settings.status.statusValueOnFunnel
+              ? <string>d.formattedValue
+              : <string>d.statusName;
+          });
+        statusLabel.exit().remove();
+      }
+      if (stage.sumStatus == 0) {
+        statusContainer.remove();
+      }
       statusBar.exit().remove();
-      statusLabel.exit().remove();
     });
 
     statusContainer.exit().remove();
@@ -571,13 +697,31 @@ export class FunnelChart implements IVisual {
             maxWidth: {
               numberRange: {
                 min: 15,
-                max: 30,
+                max: 100,
               },
             },
             margin: {
               numberRange: {
                 min: 0,
                 max: 25,
+              },
+            },
+          },
+        });
+        break;
+
+      case "status":
+        this.addAnInstanceToEnumeration(instances, {
+          objectName,
+          properties: {
+            decimalPlaces: this.model.settings.status.decimalPlaces,
+          },
+          selector: null,
+          validValues: {
+            decimalPlaces: {
+              numberRange: {
+                min: 0,
+                max: 9,
               },
             },
           },
@@ -620,12 +764,14 @@ export class FunnelChart implements IVisual {
         this.addAnInstanceToEnumeration(instances, {
           objectName,
           properties: {
+            funnelType: this.model.settings.funnel.funnelType,
             barPadding: this.model.settings.funnel.barPadding,
             verticalBarPadding: this.model.settings.funnel.verticalBarPadding,
             degree: this.model.settings.funnel.degree,
             margin: this.model.settings.funnel.margin,
             minBarWidth: this.model.settings.funnel.minBarWidth,
             minBarHeight: this.model.settings.funnel.minBarHeight,
+            scale: this.model.settings.funnel.scale,
           },
           selector: null,
           validValues: {
@@ -655,13 +801,19 @@ export class FunnelChart implements IVisual {
             },
             minBarWidth: {
               numberRange: {
-                min: 15,
+                min: 0,
                 max: 50,
               },
             },
             minBarHeight: {
               numberRange: {
                 min: 20,
+                max: 100,
+              },
+            },
+            scale: {
+              numberRange: {
+                min: 10,
                 max: 100,
               },
             },

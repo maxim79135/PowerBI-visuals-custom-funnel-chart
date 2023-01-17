@@ -44,6 +44,7 @@ export interface IStatusPoint {
   statusName: PrimitiveValue;
   formattedStatusName: PrimitiveValue;
   value: PrimitiveValue;
+  formattedValue: PrimitiveValue;
   tooltipValues: ITooltipValue[];
   color: string;
   selectionId: ISelectionId;
@@ -59,6 +60,7 @@ export interface IFunnelChartViewModel {
   dataPoints: IDataPoint[];
   maxStageName: PrimitiveValue;
   maxValueLabel: PrimitiveValue;
+  maxStageValue: PrimitiveValue;
   statusBarX1: number;
   statusBarX2: number;
 }

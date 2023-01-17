@@ -61,6 +61,7 @@ export function visualTransform(
       dataPoints: dataPoints,
       maxStageName: undefined,
       maxValueLabel: undefined,
+      maxStageValue: undefined,
       statusBarX1: undefined,
       statusBarX2: undefined,
     };
@@ -96,47 +97,32 @@ export function visualTransform(
     displayName: "",
   };
   valuesColumnGrouped.forEach((status, index) => {
-    let values = status.values.filter((v) => v.source.roles["values"])[0];
     let tooltips = status.values.filter((v) => v.source.roles["tooltip"]);
-    let stageIndex = values.values.findIndex((v) => v != null);
-    let statusPointValue = values.values[stageIndex];
-    let stageName = dataPoints[stageIndex].stageName;
-    let color: string;
+    let values = status.values.filter((v) => v.source.roles["values"])[0];
+    values.values.forEach((value, stageIndex) => {
+      if (value == null) return;
 
-    let tooltipsValues_: ITooltipValue[] = [
-      {
-        displayName: stageCategory.source.displayName,
-        dataLabel: <string>stageName,
-      },
-      {
-        displayName: statusMetadata.displayName,
-        dataLabel: <string>status.name,
-      },
-      {
-        displayName: values.source.displayName,
-        dataLabel: prepareMeasureText(
-          statusPointValue,
-          values.source.type,
-          values.objects
-            ? <string>values.objects[0]["general"]["formatString"]
-            : valueFormatter.getFormatStringByColumn(values.source),
-          1,
-          0,
-          false,
-          false,
-          "",
-          host.locale
-        ),
-      },
-      ...tooltips.map((tooltip): ITooltipValue => {
-        return {
-          displayName: tooltip.source.displayName,
+      let statusPointValue = values.values[stageIndex];
+      let stageName = dataPoints[stageIndex].stageName;
+      let color: string;
+
+      let tooltipsValues_: ITooltipValue[] = [
+        {
+          displayName: stageCategory.source.displayName,
+          dataLabel: <string>stageName,
+        },
+        {
+          displayName: statusMetadata.displayName,
+          dataLabel: <string>status.name,
+        },
+        {
+          displayName: values.source.displayName,
           dataLabel: prepareMeasureText(
-            tooltip.values[stageIndex],
-            tooltip.source.type,
-            tooltip.objects
-              ? <string>tooltip.objects[0]["general"]["formatString"]
-              : valueFormatter.getFormatStringByColumn(tooltip.source),
+            statusPointValue,
+            values.source.type,
+            values.objects
+              ? <string>values.objects[0]["general"]["formatString"]
+              : valueFormatter.getFormatStringByColumn(values.source),
             1,
             0,
             false,
@@ -144,29 +130,74 @@ export function visualTransform(
             "",
             host.locale
           ),
-        };
-      }),
-    ];
+        },
+        ...tooltips.map((tooltip): ITooltipValue => {
+          return {
+            displayName: tooltip.source.displayName,
+            dataLabel: prepareMeasureText(
+              tooltip.values[stageIndex],
+              tooltip.source.type,
+              tooltip.objects
+                ? <string>tooltip.objects[0]["general"]["formatString"]
+                : valueFormatter.getFormatStringByColumn(tooltip.source),
+              1,
+              0,
+              false,
+              false,
+              "",
+              host.locale
+            ),
+          };
+        }),
+      ];
 
-    if (status && status.objects) {
-      color = getValue(status.objects, "dataColors", "color", {
-        solid: { color: "#333333" },
-      }).solid.color;
-    } else {
-      color = settings.dataColors.color;
-    }
+      if (status && status.objects) {
+        color = getValue(status.objects, "dataColors", "color", {
+          solid: { color: "#333333" },
+        }).solid.color;
+      } else {
+        color = settings.dataColors.color;
+      }
 
-    dataPoints[stageIndex].statusPoints.push({
-      statusName: status.name,
-      formattedStatusName: status.name,
-      value: statusPointValue,
-      tooltipValues: tooltipsValues_,
-      color: color,
-      selectionId: host
-        .createSelectionIdBuilder()
-        .withSeries(valuesColumn, status)
-        .createSelectionId(),
+      let formattedValue = prepareMeasureText(
+        statusPointValue,
+        firstValue.source.type,
+        firstValue.objects
+          ? <string>firstValue.objects[0]["general"]["formatString"]
+          : valueFormatter.getFormatStringByColumn(firstValue.source),
+        settings.status.displayUnit,
+        settings.status.decimalPlaces,
+        false,
+        false,
+        "",
+        host.locale
+      );
+      // if (statusPointValue) {
+      dataPoints[stageIndex].statusPoints.push({
+        statusName: status.name,
+        formattedStatusName: status.name,
+        value: statusPointValue,
+        formattedValue: formattedValue,
+        tooltipValues: tooltipsValues_,
+        color: color,
+        selectionId: host
+          .createSelectionIdBuilder()
+          .withSeries(valuesColumn, status)
+          .createSelectionId(),
+      });
     });
+    // let stageIndex = values.values.findIndex((v) => v != null);
+    // if (stageIndex == -1) {
+    //   tooltips.forEach((tooltip) => {
+    //     let i = tooltip.values.findIndex((v) => v != null);
+    //     if (i != -1) {
+    //       stageIndex = i;
+    //       return;
+    //     }
+    //   });
+    // }
+    // console.log(status);
+    // }
   });
 
   // calc sumStatus for each stage
@@ -204,6 +235,9 @@ export function visualTransform(
     settings: settings,
     maxStageName: maxStageName,
     maxValueLabel: maxValueLabel,
+    maxStageValue: dataPoints
+      .map((stage) => stage.sumStatus)
+      .reduce((acc, stage) => (Number(acc) > Number(stage) ? acc : stage)),
     statusBarX1: undefined,
     statusBarX2: undefined,
   };
